@@ -15,7 +15,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 app = Flask(__name__, static_folder='.')
-app.config['SECRET_KEY'] = 'scanandsavor-secret-key-2024'
+app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'scanandsavor-secret-key-2024')
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///scanandsavor.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 CORS(app, supports_credentials=True)
@@ -99,8 +99,8 @@ def create_checkout():
             payment_method_types=['card'],
             line_items=[{'price': price_id, 'quantity': 1}],
             mode='subscription',
-            success_url='http://127.0.0.1:5000/stripe/success?session_id={CHECKOUT_SESSION_ID}',
-            cancel_url='http://127.0.0.1:5000/',
+            success_url='https://scanandsavor.onrender.com/stripe/success?session_id={CHECKOUT_SESSION_ID}',
+            cancel_url='https://scanandsavor.onrender.com/',
         )
         return jsonify({'checkout_url': checkout_session.url})
     except Exception as e:
