@@ -371,7 +371,7 @@
   <div class="auth-box">
     <div id="modal-login">
       <div class="auth-title">Welcome back</div>
-      <div class="auth-sub">Log in to your Scan&Savor account</div>
+      <div class="auth-sub" id="login-reason">Log in to your Scan&Savor account</div>
       <div class="auth-error" id="login-error"></div>
       <input class="auth-input" type="email" id="login-email" placeholder="Email address" autocomplete="email" />
       <input class="auth-input" type="password" id="login-password" placeholder="Password" autocomplete="current-password" onkeydown="if(event.key==='Enter') doLogin()" />
@@ -477,6 +477,7 @@
     } else {
       document.getElementById('modal-login').style.display = 'block';
       document.getElementById('modal-signup').style.display = 'none';
+      if (reason) document.getElementById('login-reason').textContent = reason;
     }
   }
 
@@ -505,18 +506,9 @@
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({
-          ingredients: recipeIngredients,
-          dietary_restrictions: diets,
-          meal_type: '',
-          recipe_name: recipeName,
-          cook_time: ''
-        })
+        body: JSON.stringify({ ingredients: recipeIngredients, dietary_restrictions: diets, meal_type: '', recipe_name: recipeName, cook_time: '' })
       });
-      if (!response.ok) {
-        document.getElementById('modal-recipe-body').innerHTML = '<div style="text-align:center;padding:1rem;color:#c0392b;">Server error. Try again.</div>';
-        return;
-      }
+      if (!response.ok) { document.getElementById('modal-recipe-body').innerHTML = '<div style="text-align:center;padding:1rem;color:#c0392b;">Server error. Try again.</div>'; return; }
       const data = await response.json();
       if (data.recipe) {
         const r = parseRecipe(data.recipe);
@@ -641,8 +633,15 @@
       try {
         const response = await fetch('/analyze-image', { method: 'POST', body: formData, credentials: 'include' });
         const data = await response.json();
+        if (response.status === 401) {
+          if (data.error === 'signup_required') { openAuthModal('signup', data.message); break; }
+          currentUser = null;
+          updateUserBar();
+          updateAccountPage();
+          openAuthModal('login', 'Your session expired. Please log in again.');
+          break;
+        }
         if (data.error === 'upgrade_required') { alert(data.message); break; }
-        if (data.error === 'signup_required') { openAuthModal('signup', data.message); break; }
         if (data.ingredients) {
           data.ingredients.forEach(ing => { if (!ingredients.includes(ing)) ingredients.push(ing); });
           renderTags();
