@@ -18,7 +18,10 @@ app = Flask(__name__, static_folder='.')
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'scanandsavor-secret-key-2024')
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///scanandsavor.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-CORS(app, supports_credentials=True)
+app.config['SESSION_COOKIE_SECURE'] = True
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['SESSION_COOKIE_SAMESITE'] = 'None'
+CORS(app, supports_credentials=True, origins=['https://scanandsavor.onrender.com'])
 
 stripe.api_key = os.getenv('STRIPE_SECRET_KEY')
 STRIPE_PUBLISHABLE_KEY = os.getenv('STRIPE_PUBLISHABLE_KEY')
