@@ -109,10 +109,10 @@
     .day-title { font-size: 15px; font-weight: 600; color: #1a1a1a; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 0.5px solid #e5e5e5; }
     .planner-controls { display: flex; gap: 8px; margin-bottom: 1rem; }
     .days-select { flex: 1; padding: 10px 14px; border: 1px solid #e5e5e5; border-radius: 10px; font-size: 14px; outline: none; background: white; }
-    .premium-lock { text-align: center; padding: 3rem 1rem; }
+    .premium-lock { text-align: center; padding: 2rem 1rem; }
     .premium-lock-icon { font-size: 48px; margin-bottom: 12px; }
-    .premium-lock-title { font-size: 18px; font-weight: 600; color: #1a1a1a; margin-bottom: 8px; }
-    .premium-lock-text { font-size: 14px; color: #888; margin-bottom: 20px; }
+    .premium-lock-title { font-size: 22px; font-weight: 700; color: #1a1a1a; margin-bottom: 8px; }
+    .premium-lock-text { font-size: 14px; color: #888; margin-bottom: 16px; }
     .grocery-section { margin-bottom: 14px; }
     .grocery-section-title { font-size: 13px; font-weight: 600; color: #1D9E75; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
     .grocery-item { font-size: 14px; color: #333; padding: 6px 0; border-bottom: 0.5px solid #f0f0f0; display: flex; align-items: center; gap: 8px; }
@@ -227,9 +227,18 @@
 
   <div id="page-planner" class="page">
     <div id="planner-locked" class="premium-lock" style="display:none;">
-      <div class="premium-lock-icon">🔒</div>
-      <div class="premium-lock-title">Premium Feature</div>
-      <div class="premium-lock-text">The meal planner is available on the Premium plan for $10/month!</div>
+      <div class="premium-lock-icon">📅</div>
+      <div class="premium-lock-title">AI Meal Planner</div>
+      <div class="premium-lock-text">Let AI plan your entire week of meals for you!</div>
+      <div style="text-align:left;max-width:320px;margin:0 auto 20px;font-size:14px;color:#555;">
+        <div style="padding:8px 0;border-bottom:0.5px solid #e5e5e5;">🍳 Generate a full 3, 5, or 7 day meal plan</div>
+        <div style="padding:8px 0;border-bottom:0.5px solid #e5e5e5;">🥗 Get 3 meal options for every breakfast, lunch and dinner</div>
+        <div style="padding:8px 0;border-bottom:0.5px solid #e5e5e5;">📊 See calories, protein, carbs and fat for every meal</div>
+        <div style="padding:8px 0;border-bottom:0.5px solid #e5e5e5;">📖 Get the full step by step recipe for any meal</div>
+        <div style="padding:8px 0;border-bottom:0.5px solid #e5e5e5;">🛒 Auto generate a grocery list from your selected meals</div>
+        <div style="padding:8px 0;">💾 Save your meal plans to come back to anytime</div>
+      </div>
+      <div style="font-size:14px;color:#888;margin-bottom:20px;">All this for just <strong style="color:#1D9E75;">$10/month</strong> on the Premium plan.</div>
       <button class="generate-btn" onclick="showPage('account', document.getElementById('nav-account'))">Upgrade to Premium</button>
     </div>
 
