@@ -409,6 +409,8 @@
   let currentRecipe = null;
   let currentUser = null;
   let currentMealPlanData = null;
+  let savedRecipeListHTML = '';
+  let savedRecipeNames = [];
 
   async function init() {
     const res = await fetch('/auth/me', { credentials: 'include' });
@@ -672,6 +674,7 @@
     document.getElementById('recipe-list-container').innerHTML = '';
     document.getElementById('recipe-card').classList.remove('visible');
     document.getElementById('error').style.display = 'none';
+    savedRecipeListHTML = '';
     try {
       const response = await fetch('/recipe-list', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ ingredients, dietary_restrictions: diets, meal_type: selectedMeal, cook_time: selectedTime }) });
       const data = await response.json();
@@ -684,6 +687,7 @@
     const lines = text.split('\n').filter(l => l.trim());
     const container = document.getElementById('recipe-list-container');
     container.innerHTML = '<div style="font-size:13px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Pick a recipe to make</div>';
+    savedRecipeNames = [];
     lines.forEach(line => {
       const nameMatch = line.match(/RECIPE NAME:\s*([^|]+)/);
       const descMatch = line.match(/DESCRIPTION:\s*([^|]+)/);
@@ -695,6 +699,7 @@
         const name = nameMatch[1].trim(); const desc = descMatch[1].trim();
         const cal = calMatch ? parseNum(calMatch[1]) : ''; const protein = proteinMatch ? parseNum(proteinMatch[1]) : '';
         const carbs = carbsMatch ? parseNum(carbsMatch[1]) : ''; const fat = fatMatch ? parseNum(fatMatch[1]) : '';
+        savedRecipeNames.push(name);
         const div = document.createElement('div');
         div.className = 'recipe-option';
         div.innerHTML = `
@@ -708,6 +713,16 @@
           </div>` : ''}`;
         div.onclick = () => getFullRecipe(name);
         container.appendChild(div);
+      }
+    });
+    savedRecipeListHTML = container.innerHTML;
+  }
+
+  function reattachRecipeListeners() {
+    document.querySelectorAll('.recipe-option').forEach(div => {
+      const nameEl = div.querySelector('.recipe-option-name');
+      if (nameEl) {
+        div.onclick = () => getFullRecipe(nameEl.textContent.trim());
       }
     });
   }
@@ -736,6 +751,15 @@
       }
     } catch (err) { showError('Something went wrong. Make sure your backend is running!'); }
     loading.style.display = 'none';
+  }
+
+  function goBack() {
+    document.getElementById('recipe-card').classList.remove('visible');
+    if (savedRecipeListHTML) {
+      document.getElementById('recipe-list-container').innerHTML = savedRecipeListHTML;
+      reattachRecipeListeners();
+    }
+    window.scrollTo(0, 0);
   }
 
   async function generateMealPlan() {
@@ -1061,8 +1085,6 @@
     await fetch('/favorites/' + index, { method: 'DELETE', credentials: 'include' });
     loadFavoritesPage();
   }
-
-  function goBack() { document.getElementById('recipe-card').classList.remove('visible'); getRecipeList(); }
 
   function parseRecipe(text) {
     const clean = text.replace(/[#*]/g, '').replace(/\s+\n/g, '\n').trim();
