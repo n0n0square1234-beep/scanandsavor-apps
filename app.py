@@ -102,8 +102,19 @@ def create_checkout():
     tier = data.get('tier')
     price_id = STRIPE_BASIC_PRICE_ID if tier == 'basic' else STRIPE_PREMIUM_PRICE_ID
     try:
+        customer_id = current_user.stripe_customer_id
+        try:
+            stripe.Customer.retrieve(customer_id)
+        except Exception:
+            customer = stripe.Customer.create(
+                email=current_user.email,
+                name=current_user.name
+            )
+            customer_id = customer.id
+            current_user.stripe_customer_id = customer_id
+            db.session.commit()
         checkout_session = stripe.checkout.Session.create(
-            customer=current_user.stripe_customer_id,
+            customer=customer_id,
             payment_method_types=['card'],
             line_items=[{'price': price_id, 'quantity': 1}],
             mode='subscription',
