@@ -7,7 +7,7 @@ db = SQLAlchemy()
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(150), unique=True, nullable=False)
-    password = db.Column(db.String(150), nullable=False)
+    password = db.Column(db.String(500), nullable=False)
     name = db.Column(db.String(150), nullable=False)
     tier = db.Column(db.String(20), default='free')
     scans_used = db.Column(db.Integer, default=0)
