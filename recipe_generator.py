@@ -155,33 +155,33 @@ def generate_meal_plan(ingredients, dietary_restrictions=[], days=7, budget=None
     diet_text = "All meals must be: " + diet_list + "." if diet_list else ""
     budget_text = "The TOTAL estimated grocery cost for the entire meal plan must stay within $" + str(budget) + " based on average US grocery prices." if budget else ""
 
-    system_prompt = "You are a professional nutritionist and meal planner. You create balanced, varied weekly meal plans that are practical and delicious. When a budget is given, you select affordable ingredients and meals to stay within that budget based on average US supermarket prices."
+    system_prompt = "You are a professional nutritionist and meal planner. You create balanced, varied weekly meal plans that are practical and delicious. When a budget is given, you select affordable ingredients and meals to stay within that budget based on average US supermarket prices. Be concise with meal names — keep them short."
 
     user_prompt = "Create a " + str(days) + " day meal plan.\n"
     user_prompt += "Available ingredients: " + ingredient_list + "\n"
     user_prompt += diet_text + "\n"
     user_prompt += budget_text + "\n"
-    user_prompt += "For each meal slot provide 3 different options the user can choose from.\n"
-    user_prompt += "At the very end after all days, add a line: ESTIMATED_TOTAL: $[number]\n"
+    user_prompt += "For each meal slot provide 3 different options. Keep meal names SHORT (max 5 words).\n"
+    user_prompt += "At the very end after all days, add: ESTIMATED_TOTAL: $[number]\n"
     user_prompt += "Format EXACTLY like this for each day:\n\n"
 
     for i in range(1, days + 1):
         user_prompt += "DAY " + str(i) + ":\n"
-        user_prompt += "BREAKFAST_1: [meal name] | CALORIES: [number] | PROTEIN: [number]g | CARBS: [number]g | FAT: [number]g\n"
-        user_prompt += "BREAKFAST_2: [meal name] | CALORIES: [number] | PROTEIN: [number]g | CARBS: [number]g | FAT: [number]g\n"
-        user_prompt += "BREAKFAST_3: [meal name] | CALORIES: [number] | PROTEIN: [number]g | CARBS: [number]g | FAT: [number]g\n"
-        user_prompt += "LUNCH_1: [meal name] | CALORIES: [number] | PROTEIN: [number]g | CARBS: [number]g | FAT: [number]g\n"
-        user_prompt += "LUNCH_2: [meal name] | CALORIES: [number] | PROTEIN: [number]g | CARBS: [number]g | FAT: [number]g\n"
-        user_prompt += "LUNCH_3: [meal name] | CALORIES: [number] | PROTEIN: [number]g | CARBS: [number]g | FAT: [number]g\n"
-        user_prompt += "DINNER_1: [meal name] | CALORIES: [number] | PROTEIN: [number]g | CARBS: [number]g | FAT: [number]g\n"
-        user_prompt += "DINNER_2: [meal name] | CALORIES: [number] | PROTEIN: [number]g | CARBS: [number]g | FAT: [number]g\n"
-        user_prompt += "DINNER_3: [meal name] | CALORIES: [number] | PROTEIN: [number]g | CARBS: [number]g | FAT: [number]g\n\n"
+        user_prompt += "BREAKFAST_1: [name] | CALORIES: [n] | PROTEIN: [n]g | CARBS: [n]g | FAT: [n]g\n"
+        user_prompt += "BREAKFAST_2: [name] | CALORIES: [n] | PROTEIN: [n]g | CARBS: [n]g | FAT: [n]g\n"
+        user_prompt += "BREAKFAST_3: [name] | CALORIES: [n] | PROTEIN: [n]g | CARBS: [n]g | FAT: [n]g\n"
+        user_prompt += "LUNCH_1: [name] | CALORIES: [n] | PROTEIN: [n]g | CARBS: [n]g | FAT: [n]g\n"
+        user_prompt += "LUNCH_2: [name] | CALORIES: [n] | PROTEIN: [n]g | CARBS: [n]g | FAT: [n]g\n"
+        user_prompt += "LUNCH_3: [name] | CALORIES: [n] | PROTEIN: [n]g | CARBS: [n]g | FAT: [n]g\n"
+        user_prompt += "DINNER_1: [name] | CALORIES: [n] | PROTEIN: [n]g | CARBS: [n]g | FAT: [n]g\n"
+        user_prompt += "DINNER_2: [name] | CALORIES: [n] | PROTEIN: [n]g | CARBS: [n]g | FAT: [n]g\n"
+        user_prompt += "DINNER_3: [name] | CALORIES: [n] | PROTEIN: [n]g | CARBS: [n]g | FAT: [n]g\n\n"
 
     user_prompt += "ESTIMATED_TOTAL: $[total cost]\n"
 
     message = client.messages.create(
         model="claude-haiku-4-5-20251001",
-        max_tokens=3000,
+        max_tokens=3500,
         system=system_prompt,
         messages=[{"role": "user", "content": user_prompt}]
     )
@@ -192,18 +192,20 @@ def generate_grocery_list(selected_meals, dietary_restrictions=[]):
     diet_list = ", ".join(dietary_restrictions)
     diet_text = "All items must be suitable for: " + diet_list + "." if diet_list else ""
 
-    system_prompt = "You are a professional chef and nutritionist who creates organized grocery lists."
+    system_prompt = "You are a professional chef and nutritionist who creates organized grocery lists with estimated prices based on average US supermarket prices in 2024."
 
-    user_prompt = "Create a complete grocery list for these meals: " + meal_list + "\n"
+    user_prompt = "Create a complete grocery list with estimated prices for these meals: " + meal_list + "\n"
     user_prompt += diet_text + "\n"
-    user_prompt += "Organize the list by category. Include quantities needed.\n"
+    user_prompt += "Organize by category. Include quantities and estimated price for each item based on average US grocery store prices.\n"
+    user_prompt += "At the end add a GROCERY_TOTAL: $[number] line.\n"
     user_prompt += "Format exactly like this:\n\n"
-    user_prompt += "PRODUCE:\n- [item and quantity]\n\n"
-    user_prompt += "MEAT & SEAFOOD:\n- [item and quantity]\n\n"
-    user_prompt += "DAIRY & EGGS:\n- [item and quantity]\n\n"
-    user_prompt += "PANTRY & DRY GOODS:\n- [item and quantity]\n\n"
-    user_prompt += "SPICES & SEASONINGS:\n- [item and quantity]\n\n"
-    user_prompt += "OTHER:\n- [item and quantity]"
+    user_prompt += "PRODUCE:\n- [item and quantity] | $[price]\n\n"
+    user_prompt += "MEAT & SEAFOOD:\n- [item and quantity] | $[price]\n\n"
+    user_prompt += "DAIRY & EGGS:\n- [item and quantity] | $[price]\n\n"
+    user_prompt += "PANTRY & DRY GOODS:\n- [item and quantity] | $[price]\n\n"
+    user_prompt += "SPICES & SEASONINGS:\n- [item and quantity] | $[price]\n\n"
+    user_prompt += "OTHER:\n- [item and quantity] | $[price]\n\n"
+    user_prompt += "GROCERY_TOTAL: $[total]"
 
     message = client.messages.create(
         model="claude-sonnet-4-6",
