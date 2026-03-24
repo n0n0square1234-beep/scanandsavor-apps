@@ -8,7 +8,7 @@ client = Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
 
 def analyze_image(image_data, media_type):
     message = client.messages.create(
-        model="claude-opus-4-6",
+        model="claude-haiku-4-5-20251001",
         max_tokens=1024,
         messages=[{
             "role": "user",
@@ -90,7 +90,7 @@ def generate_recipe_list(ingredients, dietary_restrictions=[], meal_type="", coo
     user_prompt += "4. RECIPE NAME: [name] | DESCRIPTION: [one sentence] | CALORIES: [number] | PROTEIN: [number] | CARBS: [number] | FAT: [number]"
 
     message = client.messages.create(
-        model="claude-opus-4-6",
+        model="claude-sonnet-4-6",
         max_tokens=1024,
         system=system_prompt,
         messages=[{"role": "user", "content": user_prompt}]
@@ -142,7 +142,7 @@ def generate_recipe(ingredients, dietary_restrictions=[], meal_type="", recipe_n
     user_prompt += "CHEF TIP: [one helpful tip]"
 
     message = client.messages.create(
-        model="claude-opus-4-6",
+        model="claude-sonnet-4-6",
         max_tokens=1536,
         system=system_prompt,
         messages=[{"role": "user", "content": user_prompt}]
@@ -162,10 +162,7 @@ def generate_meal_plan(ingredients, dietary_restrictions=[], days=7, budget=None
     user_prompt += diet_text + "\n"
     user_prompt += budget_text + "\n"
     user_prompt += "For each meal slot provide 3 different options the user can choose from.\n"
-    if budget:
-        user_prompt += "At the very end after all days, add a line: ESTIMATED_TOTAL: $[number] for the full meal plan based on average US grocery prices.\n"
-    else:
-        user_prompt += "At the very end after all days, add a line: ESTIMATED_TOTAL: $[number] for the full meal plan based on average US grocery prices.\n"
+    user_prompt += "At the very end after all days, add a line: ESTIMATED_TOTAL: $[number]\n"
     user_prompt += "Format EXACTLY like this for each day:\n\n"
 
     for i in range(1, days + 1):
@@ -180,11 +177,11 @@ def generate_meal_plan(ingredients, dietary_restrictions=[], days=7, budget=None
         user_prompt += "DINNER_2: [meal name] | CALORIES: [number] | PROTEIN: [number]g | CARBS: [number]g | FAT: [number]g\n"
         user_prompt += "DINNER_3: [meal name] | CALORIES: [number] | PROTEIN: [number]g | CARBS: [number]g | FAT: [number]g\n\n"
 
-    user_prompt += "ESTIMATED_TOTAL: $[total cost for all meals]\n"
+    user_prompt += "ESTIMATED_TOTAL: $[total cost]\n"
 
     message = client.messages.create(
-        model="claude-opus-4-6",
-        max_tokens=4096,
+        model="claude-haiku-4-5-20251001",
+        max_tokens=2048,
         system=system_prompt,
         messages=[{"role": "user", "content": user_prompt}]
     )
@@ -209,7 +206,7 @@ def generate_grocery_list(selected_meals, dietary_restrictions=[]):
     user_prompt += "OTHER:\n- [item and quantity]"
 
     message = client.messages.create(
-        model="claude-opus-4-6",
+        model="claude-sonnet-4-6",
         max_tokens=1024,
         system=system_prompt,
         messages=[{"role": "user", "content": user_prompt}]
