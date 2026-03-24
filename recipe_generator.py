@@ -149,17 +149,23 @@ def generate_recipe(ingredients, dietary_restrictions=[], meal_type="", recipe_n
     )
     return message.content[0].text
 
-def generate_meal_plan(ingredients, dietary_restrictions=[], days=7):
+def generate_meal_plan(ingredients, dietary_restrictions=[], days=7, budget=None):
     ingredient_list = ", ".join(ingredients) if ingredients else "common pantry staples"
     diet_list = ", ".join(dietary_restrictions)
     diet_text = "All meals must be: " + diet_list + "." if diet_list else ""
+    budget_text = "The TOTAL estimated grocery cost for the entire meal plan must stay within $" + str(budget) + " based on average US grocery prices." if budget else ""
 
-    system_prompt = "You are a professional nutritionist and meal planner. You create balanced, varied weekly meal plans that are practical and delicious."
+    system_prompt = "You are a professional nutritionist and meal planner. You create balanced, varied weekly meal plans that are practical and delicious. When a budget is given, you select affordable ingredients and meals to stay within that budget based on average US supermarket prices."
 
     user_prompt = "Create a " + str(days) + " day meal plan.\n"
     user_prompt += "Available ingredients: " + ingredient_list + "\n"
     user_prompt += diet_text + "\n"
+    user_prompt += budget_text + "\n"
     user_prompt += "For each meal slot provide 3 different options the user can choose from.\n"
+    if budget:
+        user_prompt += "At the very end after all days, add a line: ESTIMATED_TOTAL: $[number] for the full meal plan based on average US grocery prices.\n"
+    else:
+        user_prompt += "At the very end after all days, add a line: ESTIMATED_TOTAL: $[number] for the full meal plan based on average US grocery prices.\n"
     user_prompt += "Format EXACTLY like this for each day:\n\n"
 
     for i in range(1, days + 1):
@@ -173,6 +179,8 @@ def generate_meal_plan(ingredients, dietary_restrictions=[], days=7):
         user_prompt += "DINNER_1: [meal name] | CALORIES: [number] | PROTEIN: [number]g | CARBS: [number]g | FAT: [number]g\n"
         user_prompt += "DINNER_2: [meal name] | CALORIES: [number] | PROTEIN: [number]g | CARBS: [number]g | FAT: [number]g\n"
         user_prompt += "DINNER_3: [meal name] | CALORIES: [number] | PROTEIN: [number]g | CARBS: [number]g | FAT: [number]g\n\n"
+
+    user_prompt += "ESTIMATED_TOTAL: $[total cost for all meals]\n"
 
     message = client.messages.create(
         model="claude-opus-4-6",

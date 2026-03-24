@@ -106,10 +106,7 @@ def create_checkout():
         try:
             stripe.Customer.retrieve(customer_id)
         except Exception:
-            customer = stripe.Customer.create(
-                email=current_user.email,
-                name=current_user.name
-            )
+            customer = stripe.Customer.create(email=current_user.email, name=current_user.name)
             customer_id = customer.id
             current_user.stripe_customer_id = customer_id
             db.session.commit()
@@ -210,7 +207,8 @@ def get_meal_plan():
     ingredients = data.get('ingredients', [])
     dietary_restrictions = data.get('dietary_restrictions', [])
     days = data.get('days', 7)
-    meal_plan = generate_meal_plan(ingredients, dietary_restrictions, days)
+    budget = data.get('budget', None)
+    meal_plan = generate_meal_plan(ingredients, dietary_restrictions, days, budget)
     return jsonify({'meal_plan': meal_plan})
 
 @app.route('/grocery-list', methods=['POST'])

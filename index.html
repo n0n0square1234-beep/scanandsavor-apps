@@ -246,6 +246,7 @@
         <div style="padding:8px 0;border-bottom:0.5px solid #e5e5e5;">📊 See calories, protein, carbs and fat for every meal</div>
         <div style="padding:8px 0;border-bottom:0.5px solid #e5e5e5;">📖 Get the full step by step recipe for any meal</div>
         <div style="padding:8px 0;border-bottom:0.5px solid #e5e5e5;">🛒 Auto generate a grocery list from your selected meals</div>
+        <div style="padding:8px 0;border-bottom:0.5px solid #e5e5e5;">💰 Set a weekly food budget and stay within it</div>
         <div style="padding:8px 0;">💾 Save your meal plans to come back to anytime</div>
       </div>
       <div style="font-size:14px;color:#888;margin-bottom:20px;">All this for just <strong style="color:#1D9E75;">$10/month</strong> on the Premium plan.</div>
@@ -269,9 +270,18 @@
             </select>
             <button class="generate-btn" style="margin:0;flex:2;" onclick="generateMealPlan()" id="plan-btn">Generate meal plan</button>
           </div>
-          <div style="font-size:13px;color:#888;">Uses your ingredients and dietary preferences from the Generate tab</div>
+          <div style="display:flex;align-items:center;gap:8px;margin-top:8px;">
+            <div style="font-size:13px;color:#555;font-weight:600;white-space:nowrap;">Weekly budget:</div>
+            <div style="display:flex;align-items:center;border:1px solid #e5e5e5;border-radius:10px;overflow:hidden;flex:1;">
+              <span style="padding:8px 10px;background:#f5f5f0;color:#888;font-size:15px;border-right:1px solid #e5e5e5;">$</span>
+              <input type="number" id="budget-input" placeholder="e.g. 100" min="0" style="flex:1;padding:8px 12px;border:none;outline:none;font-size:15px;" />
+            </div>
+            <div style="font-size:12px;color:#bbb;">optional</div>
+          </div>
+          <div style="font-size:12px;color:#888;margin-top:6px;">Set a budget and we'll keep your meal plan within that price based on average US grocery prices.</div>
         </div>
         <div class="loading" id="plan-loading">Creating your meal plan...</div>
+        <div id="budget-display" style="display:none;margin-bottom:8px;"></div>
         <div id="meal-plan-container"></div>
         <div id="plan-actions" style="display:none;">
           <button class="generate-btn" onclick="generateGroceryList()" id="grocery-btn">Generate grocery list</button>
@@ -320,7 +330,7 @@
             <div class="tier-card-name">Premium</div>
             <div class="tier-card-price">$10</div>
             <div class="tier-card-feature">Everything in Basic</div>
-            <div class="tier-card-feature">Meal planner</div>
+            <div class="tier-card-feature">Meal planner + budget</div>
             <div class="tier-card-feature">Grocery lists</div>
             <button class="tier-card-btn" onclick="openAuthModal('signup')">Get started</button>
           </div>
@@ -359,7 +369,7 @@
             <div class="tier-card-name">Premium</div>
             <div class="tier-card-price">$10</div>
             <div class="tier-card-feature">Everything in Basic</div>
-            <div class="tier-card-feature">Meal planner</div>
+            <div class="tier-card-feature">Meal planner + budget</div>
             <div class="tier-card-feature">Grocery lists</div>
             <button class="tier-card-btn" id="btn-premium" onclick="subscribe('premium')">Upgrade</button>
           </div>
@@ -514,9 +524,7 @@
     document.getElementById('recipe-modal').scrollTop = 0;
   }
 
-  function closeRecipeModal() {
-    document.getElementById('recipe-modal').classList.remove('visible');
-  }
+  function closeRecipeModal() { document.getElementById('recipe-modal').classList.remove('visible'); }
 
   async function getPlannerRecipe(recipeName, mealType) {
     openRecipeModal('Loading...', '', '<div style="text-align:center;padding:2rem;color:#888;">Fetching recipe for ' + recipeName + '...</div>');
@@ -656,9 +664,7 @@
         const data = await response.json();
         if (response.status === 401) {
           if (data.error === 'signup_required') { openAuthModal('signup', data.message); break; }
-          currentUser = null;
-          updateUserBar();
-          updateAccountPage();
+          currentUser = null; updateUserBar(); updateAccountPage();
           openAuthModal('login', 'Your session expired. Please log in again.');
           break;
         }
@@ -813,19 +819,39 @@
   async function generateMealPlan() {
     const diets = [...document.querySelectorAll('.diet-chip.active')].map(d => d.textContent);
     const days = parseInt(document.getElementById('days-select').value);
+    const budgetInput = document.getElementById('budget-input').value;
+    const budget = budgetInput ? parseFloat(budgetInput) : null;
     const btn = document.getElementById('plan-btn');
     const loading = document.getElementById('plan-loading');
     btn.disabled = true; loading.style.display = 'block';
     document.getElementById('meal-plan-container').innerHTML = '';
     document.getElementById('plan-actions').style.display = 'none';
     document.getElementById('grocery-container').innerHTML = '';
+    document.getElementById('budget-display').style.display = 'none';
     currentMealPlanData = null;
     try {
-      const response = await fetch('/meal-plan', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ ingredients, dietary_restrictions: diets, days }) });
+      const response = await fetch('/meal-plan', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ ingredients, dietary_restrictions: diets, days, budget }) });
       const data = await response.json();
       if (data.error === 'premium_required') { updatePlannerPage(); }
       else if (data.error) { document.getElementById('meal-plan-container').innerHTML = '<div style="text-align:center;padding:1rem;color:#c0392b;">' + data.error + '</div>'; }
-      else { currentMealPlanData = { text: data.meal_plan, days, diets }; renderMealPlan(data.meal_plan, days); document.getElementById('plan-actions').style.display = 'block'; }
+      else {
+        currentMealPlanData = { text: data.meal_plan, days, diets };
+        renderMealPlan(data.meal_plan, days);
+        document.getElementById('plan-actions').style.display = 'block';
+        const totalMatch = data.meal_plan.match(/ESTIMATED_TOTAL:\s*\$?([\d.]+)/);
+        if (totalMatch) {
+          const total = parseFloat(totalMatch[1]);
+          const budgetDisplay = document.getElementById('budget-display');
+          budgetDisplay.style.display = 'block';
+          if (budget && total > budget) {
+            budgetDisplay.innerHTML = `<div style="background:#FEE;border-radius:12px;padding:12px 14px;display:flex;align-items:center;gap:10px;"><div style="font-size:20px;">⚠️</div><div><div style="font-weight:600;color:#c0392b;font-size:14px;">Over budget!</div><div style="font-size:13px;color:#c0392b;">Estimated cost: <strong>$${total.toFixed(2)}</strong> · Budget: <strong>$${budget.toFixed(2)}</strong></div></div></div>`;
+          } else if (budget) {
+            budgetDisplay.innerHTML = `<div style="background:#E1F5EE;border-radius:12px;padding:12px 14px;display:flex;align-items:center;gap:10px;"><div style="font-size:20px;">✅</div><div><div style="font-weight:600;color:#0F6E56;font-size:14px;">Within budget!</div><div style="font-size:13px;color:#0F6E56;">Estimated cost: <strong>$${total.toFixed(2)}</strong> · Budget: <strong>$${budget.toFixed(2)}</strong></div></div></div>`;
+          } else {
+            budgetDisplay.innerHTML = `<div style="background:#f5f5f0;border-radius:12px;padding:12px 14px;display:flex;align-items:center;gap:10px;"><div style="font-size:20px;">🛒</div><div><div style="font-weight:600;color:#1a1a1a;font-size:14px;">Estimated grocery cost</div><div style="font-size:13px;color:#888;"><strong style="color:#1a1a1a;">$${total.toFixed(2)}</strong> for the full meal plan</div></div></div>`;
+          }
+        }
+      }
     } catch (err) { document.getElementById('meal-plan-container').innerHTML = '<div style="text-align:center;padding:1rem;color:#c0392b;">Something went wrong. Try again!</div>'; }
     btn.disabled = false; loading.style.display = 'none';
   }
@@ -954,7 +980,7 @@
       if (line.startsWith('DAY ')) {
         currentDay++;
         days_data[currentDay] = { breakfast: [], lunch: [], dinner: [] };
-      } else {
+      } else if (!line.startsWith('ESTIMATED_TOTAL')) {
         const types = [
           { key: 'BREAKFAST_1', meal: 'breakfast' }, { key: 'BREAKFAST_2', meal: 'breakfast' }, { key: 'BREAKFAST_3', meal: 'breakfast' },
           { key: 'LUNCH_1', meal: 'lunch' }, { key: 'LUNCH_2', meal: 'lunch' }, { key: 'LUNCH_3', meal: 'lunch' },
