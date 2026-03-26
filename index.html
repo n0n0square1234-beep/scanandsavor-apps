@@ -8,66 +8,52 @@
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: #f5f5f0; min-height: 100vh; transition: background 0.3s, color 0.3s; }
     body.dark { background: #111; color: #eee; }
-
     .app { max-width: 480px; margin: 0 auto; padding: 1rem; }
     .header { text-align: center; padding: 2rem 0 1rem; position: relative; }
     .logo { font-size: 28px; font-weight: 600; color: #1a1a1a; }
     body.dark .logo { color: #eee; }
     .logo span { color: #1D9E75; }
     .tagline { font-size: 14px; color: #888; margin-top: 4px; }
-
     .dark-toggle { position: absolute; top: 2rem; right: 0; background: none; border: 1px solid #e5e5e5; border-radius: 10px; padding: 6px 10px; font-size: 18px; cursor: pointer; line-height: 1; }
     body.dark .dark-toggle { border-color: #444; }
-
     .nav { display: flex; gap: 8px; margin-bottom: 1rem; }
     .nav-btn { flex: 1; padding: 10px; border: 1px solid #e5e5e5; border-radius: 10px; font-size: 13px; cursor: pointer; background: white; color: #666; font-weight: 500; transition: all 0.2s; }
     body.dark .nav-btn { background: #1e1e1e; border-color: #333; color: #aaa; }
     .nav-btn.active { background: #1D9E75; color: white; border-color: #1D9E75; }
-    body.dark .nav-btn.active { background: #1D9E75; color: white; border-color: #1D9E75; }
-
     .page { display: none; }
     .page.active { display: block; }
-
     .card { background: white; border-radius: 16px; padding: 1.25rem; margin-bottom: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
     body.dark .card { background: #1e1e1e; box-shadow: 0 1px 3px rgba(0,0,0,0.3); }
-
     .section-label { font-size: 13px; font-weight: 600; color: #888; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
-
     .upload-box { border: 1px dashed #ccc; border-radius: 10px; padding: 1.5rem; text-align: center; cursor: pointer; margin-bottom: 12px; transition: background 0.2s; }
     body.dark .upload-box { border-color: #444; }
     .upload-box:hover { background: #f9f9f9; }
     body.dark .upload-box:hover { background: #2a2a2a; }
-
     .ingredient-input { display: flex; gap: 8px; }
     .ingredient-input input { flex: 1; padding: 10px 14px; border: 1px solid #e5e5e5; border-radius: 10px; font-size: 15px; outline: none; background: white; color: #1a1a1a; }
     body.dark .ingredient-input input { background: #2a2a2a; border-color: #444; color: #eee; }
     .ingredient-input input:focus { border-color: #1D9E75; }
     .add-btn { padding: 0 18px; background: #1D9E75; color: white; border: none; border-radius: 10px; font-size: 15px; cursor: pointer; }
-
     .tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
     .tag { display: flex; align-items: center; gap: 4px; background: #E1F5EE; color: #0F6E56; border-radius: 99px; padding: 5px 12px; font-size: 13px; }
     body.dark .tag { background: #0F3D2E; color: #5DCAA5; }
     .tag button { background: none; border: none; color: #0F6E56; cursor: pointer; font-size: 16px; line-height: 1; }
     body.dark .tag button { color: #5DCAA5; }
-
     .meal-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
     .meal-chip { border: 1px solid #e5e5e5; border-radius: 10px; padding: 10px 6px; text-align: center; font-size: 13px; cursor: pointer; color: #666; background: white; transition: all 0.2s; }
     body.dark .meal-chip { background: #2a2a2a; border-color: #444; color: #aaa; }
     .meal-chip.active { background: #E1F5EE; color: #0F6E56; border-color: #5DCAA5; font-weight: 600; }
     body.dark .meal-chip.active { background: #0F3D2E; color: #5DCAA5; border-color: #1D9E75; }
     .meal-icon { font-size: 20px; margin-bottom: 4px; }
-
     .diet-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
     .diet-chip { border: 1px solid #e5e5e5; border-radius: 10px; padding: 10px; text-align: center; font-size: 13px; cursor: pointer; color: #666; background: white; transition: all 0.2s; }
     body.dark .diet-chip { background: #2a2a2a; border-color: #444; color: #aaa; }
     .diet-chip.active { background: #E1F5EE; color: #0F6E56; border-color: #5DCAA5; font-weight: 600; }
     body.dark .diet-chip.active { background: #0F3D2E; color: #5DCAA5; border-color: #1D9E75; }
-
     .generate-btn { width: 100%; padding: 14px; background: #1D9E75; color: white; border: none; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; margin-bottom: 8px; }
     .generate-btn:disabled { background: #a0cfbf; cursor: not-allowed; }
     .secondary-btn { width: 100%; padding: 12px; background: white; color: #1D9E75; border: 1.5px solid #1D9E75; border-radius: 12px; font-size: 15px; font-weight: 600; cursor: pointer; margin-bottom: 8px; }
     body.dark .secondary-btn { background: #1e1e1e; }
-
     .recipe-option { border: 1px solid #e5e5e5; border-radius: 12px; padding: 14px; margin-bottom: 8px; cursor: pointer; background: white; transition: border-color 0.2s; }
     body.dark .recipe-option { background: #1e1e1e; border-color: #333; }
     .recipe-option:hover { border-color: #1D9E75; background: #f9fffe; }
@@ -81,7 +67,6 @@
     .recipe-option-macro-label { font-size: 10px; color: #888; text-transform: uppercase; letter-spacing: 0.4px; }
     .recipe-option-macro-value { font-size: 14px; font-weight: 600; color: #1a1a1a; margin-top: 1px; }
     body.dark .recipe-option-macro-value { color: #eee; }
-
     .recipe-card { display: none; }
     .recipe-card.visible { display: block; }
     .recipe-title { font-size: 20px; font-weight: 600; color: #1a1a1a; margin-bottom: 4px; }
@@ -89,13 +74,11 @@
     .recipe-meta { font-size: 13px; color: #888; margin-bottom: 14px; }
     .recipe-body { font-size: 15px; color: #333; line-height: 1.7; }
     body.dark .recipe-body { color: #ccc; }
-
     .back-btn { background: none; border: 1px solid #e5e5e5; border-radius: 10px; padding: 8px 16px; font-size: 14px; color: #666; cursor: pointer; margin-bottom: 12px; margin-right: 8px; }
     body.dark .back-btn { border-color: #444; color: #aaa; }
     .back-btn:hover { border-color: #1D9E75; color: #1D9E75; }
     .save-btn { background: #1D9E75; border: none; border-radius: 10px; padding: 8px 16px; font-size: 14px; color: white; cursor: pointer; margin-bottom: 12px; }
     .save-btn.saved { background: #888; }
-
     .macro-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 16px; }
     .macro-card { border-radius: 10px; padding: 10px; text-align: center; }
     .macro-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; }
@@ -106,7 +89,6 @@
     .micro-label { font-size: 10px; color: #888; text-transform: uppercase; letter-spacing: 0.4px; }
     .micro-value { font-size: 15px; font-weight: 600; color: #1a1a1a; margin-top: 2px; }
     body.dark .micro-value { color: #eee; }
-
     .serving-adjuster { display: flex; align-items: center; gap: 10px; background: #f5f5f0; border-radius: 10px; padding: 8px 14px; margin-bottom: 14px; }
     body.dark .serving-adjuster { background: #2a2a2a; }
     .serving-adjuster-label { font-size: 13px; color: #888; flex: 1; }
@@ -114,7 +96,6 @@
     .serving-btn:hover { background: #0F6E56; }
     .serving-count { font-size: 16px; font-weight: 700; color: #1a1a1a; min-width: 24px; text-align: center; }
     body.dark .serving-count { color: #eee; }
-
     .favorite-card { border: 1px solid #e5e5e5; border-radius: 12px; padding: 14px; margin-bottom: 8px; background: white; cursor: pointer; }
     body.dark .favorite-card { background: #1e1e1e; border-color: #333; }
     .favorite-card:hover { border-color: #1D9E75; }
@@ -124,12 +105,10 @@
     .favorite-meta { font-size: 12px; color: #888; margin-top: 2px; }
     .delete-btn { background: none; border: none; color: #ccc; cursor: pointer; font-size: 18px; padding: 4px 8px; }
     .delete-btn:hover { color: #c0392b; }
-
     .empty-state { text-align: center; padding: 3rem 1rem; color: #888; }
     .empty-icon { font-size: 48px; margin-bottom: 12px; }
     .loading { text-align: center; padding: 2rem; color: #888; font-size: 15px; display: none; }
     .error { color: #c0392b; font-size: 14px; text-align: center; padding: 1rem; display: none; }
-
     .auth-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 100; align-items: center; justify-content: center; }
     .auth-modal.visible { display: flex; }
     .auth-box { background: white; border-radius: 20px; padding: 2rem; width: 90%; max-width: 400px; }
@@ -147,14 +126,12 @@
     .auth-switch { text-align: center; font-size: 13px; color: #888; margin-top: 10px; }
     .auth-switch a { color: #1D9E75; cursor: pointer; font-weight: 500; }
     .auth-error { color: #c0392b; font-size: 13px; text-align: center; margin-bottom: 10px; display: none; }
-
     .user-bar { display: flex; align-items: center; justify-content: space-between; background: white; border-radius: 12px; padding: 10px 14px; margin-bottom: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
     body.dark .user-bar { background: #1e1e1e; box-shadow: 0 1px 3px rgba(0,0,0,0.3); }
     .user-bar-name { font-weight: 600; color: #1a1a1a; font-size: 14px; }
     body.dark .user-bar-name { color: #eee; }
     .user-bar-scans { font-size: 12px; color: #888; margin-top: 1px; }
     .signin-link { font-size: 13px; color: #1D9E75; font-weight: 600; cursor: pointer; }
-
     .tier-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 1rem; }
     .tier-card { border: 1px solid #e5e5e5; border-radius: 14px; padding: 14px 10px; text-align: center; background: white; }
     body.dark .tier-card { background: #1e1e1e; border-color: #333; }
@@ -166,52 +143,44 @@
     .tier-card-btn { width: 100%; padding: 8px; background: #1D9E75; color: white; border: none; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; margin-top: 10px; }
     .tier-card-btn.current { background: #e5e5e5; color: #888; cursor: default; }
     body.dark .tier-card-btn.current { background: #333; color: #888; }
-
     .profile-card { background: white; border-radius: 16px; padding: 1.25rem; margin-bottom: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
     body.dark .profile-card { background: #1e1e1e; }
+    body.dark .profile-card div { color: #eee !important; }
     .logout-btn { width: 100%; padding: 12px; background: none; border: 1px solid #e5e5e5; border-radius: 10px; font-size: 15px; color: #666; cursor: pointer; margin-top: 12px; }
     body.dark .logout-btn { border-color: #444; color: #aaa; }
     .logout-btn:hover { border-color: #c0392b; color: #c0392b; }
-
     .unlock-banner { background: #E1F5EE; border-radius: 12px; padding: 14px; margin-bottom: 1rem; display: flex; align-items: center; justify-content: space-between; }
     body.dark .unlock-banner { background: #0F3D2E; }
     .unlock-text { font-size: 13px; color: #0F6E56; }
     .unlock-btn { background: #1D9E75; color: white; border: none; border-radius: 8px; padding: 8px 14px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; margin-left: 10px; }
-
     .day-card { background: white; border-radius: 14px; padding: 1rem; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
     body.dark .day-card { background: #1e1e1e; box-shadow: 0 1px 3px rgba(0,0,0,0.3); }
     .day-title { font-size: 15px; font-weight: 600; color: #1a1a1a; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 0.5px solid #e5e5e5; }
     body.dark .day-title { color: #eee; border-bottom-color: #333; }
-
     .planner-controls { display: flex; gap: 8px; margin-bottom: 1rem; }
     .days-select { flex: 1; padding: 10px 14px; border: 1px solid #e5e5e5; border-radius: 10px; font-size: 14px; outline: none; background: white; color: #1a1a1a; }
     body.dark .days-select { background: #2a2a2a; border-color: #444; color: #eee; }
-
     .premium-lock { text-align: center; padding: 2rem 1rem; }
     .premium-lock-icon { font-size: 48px; margin-bottom: 12px; }
     .premium-lock-title { font-size: 22px; font-weight: 700; color: #1a1a1a; margin-bottom: 8px; }
     body.dark .premium-lock-title { color: #eee; }
     .premium-lock-text { font-size: 14px; color: #888; margin-bottom: 16px; }
-
     .grocery-section { margin-bottom: 14px; }
     .grocery-section-title { font-size: 13px; font-weight: 600; color: #1D9E75; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
     .grocery-item { font-size: 14px; color: #333; padding: 6px 0; border-bottom: 0.5px solid #f0f0f0; display: flex; align-items: center; gap: 8px; }
     body.dark .grocery-item { color: #ccc; border-bottom-color: #2a2a2a; }
     .grocery-item input[type="checkbox"] { accent-color: #1D9E75; width: 16px; height: 16px; cursor: pointer; flex-shrink: 0; }
     .grocery-item.checked span { text-decoration: line-through; color: #aaa; }
-
     .saved-plan-card { border: 1px solid #e5e5e5; border-radius: 12px; padding: 14px; margin-bottom: 8px; background: white; }
     body.dark .saved-plan-card { background: #1e1e1e; border-color: #333; }
     .saved-plan-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
     .saved-plan-title { font-size: 15px; font-weight: 600; color: #1a1a1a; }
     body.dark .saved-plan-title { color: #eee; }
     .saved-plan-meta { font-size: 12px; color: #888; margin-top: 2px; }
-
     .plan-tabs { display: flex; gap: 8px; margin-bottom: 1rem; }
     .plan-tab { flex: 1; padding: 8px; border: 1px solid #e5e5e5; border-radius: 10px; font-size: 13px; cursor: pointer; background: white; color: #666; text-align: center; font-weight: 500; }
     body.dark .plan-tab { background: #1e1e1e; border-color: #333; color: #aaa; }
     .plan-tab.active { background: #1D9E75; color: white; border-color: #1D9E75; }
-
     .recipe-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 200; align-items: flex-start; justify-content: center; overflow-y: auto; padding: 1rem; }
     .recipe-modal.visible { display: flex; }
     .recipe-modal-box { background: white; border-radius: 20px; padding: 1.5rem; width: 100%; max-width: 480px; margin: auto; }
@@ -434,7 +403,7 @@
 
     <div id="account-user" style="display:none;">
       <div class="profile-card">
-        <div style="font-size:18px;font-weight:600;color:#1a1a1a;" id="profile-name"></div>
+        <div style="font-size:18px;font-weight:600;" id="profile-name"></div>
         <div style="font-size:14px;color:#888;margin-top:2px;" id="profile-email"></div>
         <div style="font-size:13px;color:#1D9E75;margin-top:6px;font-weight:500;" id="profile-tier"></div>
         <button class="logout-btn" onclick="doLogout()">Log out</button>
@@ -478,7 +447,7 @@
   <div class="recipe-modal-box">
     <div class="recipe-modal-header">
       <div>
-        <div style="font-size:18px;font-weight:600;color:#1a1a1a;" id="modal-recipe-title">Loading...</div>
+        <div style="font-size:18px;font-weight:600;" id="modal-recipe-title">Loading...</div>
         <div style="font-size:13px;color:#888;margin-top:2px;" id="modal-recipe-meta"></div>
       </div>
       <button class="recipe-modal-close" onclick="closeRecipeModal()">x</button>
@@ -656,9 +625,7 @@
     const decimal = num - Math.floor(num);
     const whole = Math.floor(num);
     for (const [val, str] of fractions) {
-      if (Math.abs(decimal - val) < 0.05) {
-        return whole > 0 ? whole + ' ' + str : str;
-      }
+      if (Math.abs(decimal - val) < 0.05) return whole > 0 ? whole + ' ' + str : str;
     }
     return num % 1 === 0 ? String(num) : num.toFixed(1);
   }
@@ -681,10 +648,8 @@
     const ratio = currentServings / baseServings;
     const scaledIngredients = scaleIngredients(ratio);
     const ingList = document.getElementById('ing-list-scaled');
-    if (ingList) {
-      ingList.innerHTML = scaledIngredients.map(i => `<li style="margin-bottom:4px">${i}</li>`).join('');
-    }
-    if (currentRecipe) { updateScaledMacros(ratio); }
+    if (ingList) ingList.innerHTML = scaledIngredients.map(i => `<li style="margin-bottom:4px">${i}</li>`).join('');
+    if (currentRecipe) updateScaledMacros(ratio);
   }
 
   function updateScaledMacros(ratio) {
@@ -1166,7 +1131,6 @@
     const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
     let days_data = {};
     let currentDay = 0;
-
     for (const line of lines) {
       if (line.startsWith('DAY ')) {
         currentDay++;
@@ -1198,7 +1162,6 @@
         }
       }
     }
-
     for (let d = 1; d <= Object.keys(days_data).length; d++) {
       const dayData = days_data[d];
       if (!dayData) continue;
