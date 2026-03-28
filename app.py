@@ -2,6 +2,7 @@ import os
 import json
 import base64
 import uuid
+import anthropic
 from datetime import datetime
 from flask import Flask, request, jsonify
 from flask_cors import CORS
@@ -165,14 +166,13 @@ def analyze_image_route():
 # ── Chat route ────────────────────────────────────────────────────────────────
 @app.route('/chat', methods=['POST'])
 def chat():
-    from anthropic import Anthropic
     data = request.json
     message = data.get('message', '')
     recipe_context = data.get('recipe_context', None)
     history = data.get('history', [])
     if not message:
         return jsonify({'error': 'No message provided'}), 400
-    client = Anthropic(api_key=os.environ.get('ANTHROPIC_API_KEY'))
+    client = anthropic.Anthropic(api_key=os.environ.get('ANTHROPIC_API_KEY'))
     system_prompt = """You are a friendly and knowledgeable cooking assistant for Scan&Savor, an AI recipe app.
 You help users with cooking questions, ingredient substitutions, technique tips, dietary adjustments, and anything food related.
 Keep answers concise, practical and friendly. Use a warm conversational tone.
