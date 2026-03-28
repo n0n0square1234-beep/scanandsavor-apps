@@ -63,6 +63,8 @@ def save_shared_recipe(share_id, recipe):
         json.dump(recipes, f, ensure_ascii=False, indent=2)
 
 # ── Ratings helpers ──────────────────────────────────────────────────────────
+# Ratings stored as {recipe_name: {ip_address: rating}}
+# This allows one rating per person but lets them update it
 RATINGS_FILE = "ratings.json"
 
 def load_ratings():
@@ -71,14 +73,22 @@ def load_ratings():
     with open(RATINGS_FILE, "r", encoding="utf-8") as f:
         return json.load(f)
 
-def save_rating(recipe_name, rating):
+def get_user_ip():
+    # Get real IP behind Render's proxy
+    forwarded = request.headers.get('X-Forwarded-For')
+    if forwarded:
+        return forwarded.split(',')[0].strip()
+    return request.remote_addr or 'unknown'
+
+def save_rating(recipe_name, rating, ip):
     ratings = load_ratings()
     if recipe_name not in ratings:
-        ratings[recipe_name] = []
-    ratings[recipe_name].append(rating)
+        ratings[recipe_name] = {}
+    # Overwrite if they've rated before — one rating per IP, updatable
+    ratings[recipe_name][ip] = rating
     with open(RATINGS_FILE, "w", encoding="utf-8") as f:
         json.dump(ratings, f, ensure_ascii=False, indent=2)
-    all_ratings = ratings[recipe_name]
+    all_ratings = list(ratings[recipe_name].values())
     return {
         'average': round(sum(all_ratings) / len(all_ratings), 1),
         'count': len(all_ratings),
@@ -225,18 +235,23 @@ def rate_recipe():
     rating = data.get('rating', 0)
     if not recipe_name or not (1 <= rating <= 5):
         return jsonify({'error': 'Invalid rating'}), 400
-    result = save_rating(recipe_name, rating)
+    ip = get_user_ip()
+    result = save_rating(recipe_name, rating, ip)
     return jsonify(result)
 
 @app.route('/ratings/<path:recipe_name>', methods=['GET'])
 def get_rating(recipe_name):
     ratings = load_ratings()
-    all_ratings = ratings.get(recipe_name, [])
-    if not all_ratings:
-        return jsonify({'average': 0, 'count': 0})
+    recipe_ratings = ratings.get(recipe_name, {})
+    if not recipe_ratings:
+        return jsonify({'average': 0, 'count': 0, 'user_rating': 0})
+    all_ratings = list(recipe_ratings.values())
+    ip = get_user_ip()
+    user_rating = recipe_ratings.get(ip, 0)
     return jsonify({
         'average': round(sum(all_ratings) / len(all_ratings), 1),
-        'count': len(all_ratings)
+        'count': len(all_ratings),
+        'user_rating': user_rating
     })
 
 # ── Favorites routes ──────────────────────────────────────────────────────────

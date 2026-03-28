@@ -610,10 +610,7 @@
 
   function initDarkMode() {
     const saved = localStorage.getItem('darkMode');
-    if (saved === 'on') {
-      document.body.classList.add('dark');
-      document.getElementById('dark-btn').textContent = '☀️';
-    }
+    if (saved === 'on') { document.body.classList.add('dark'); document.getElementById('dark-btn').textContent = '☀️'; }
   }
 
   async function init() {
@@ -645,13 +642,11 @@
     resetStars();
     try {
       const res = await fetch('/rate-recipe', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
         body: JSON.stringify({ recipe_name: currentRecipe.title, rating })
       });
       const data = await res.json();
-      if (data.average) {
+      if (data.average !== undefined) {
         document.getElementById('rating-info').textContent = `${data.average}★ (${data.count} rating${data.count !== 1 ? 's' : ''})`;
       }
     } catch (err) { console.log('Rating error:', err); }
@@ -665,6 +660,7 @@
     try {
       const res = await fetch('/ratings/' + encodeURIComponent(recipeName), { credentials: 'include' });
       const data = await res.json();
+      if (data.user_rating) { currentUserRating = data.user_rating; resetStars(); }
       if (data.count > 0) {
         document.getElementById('rating-info').textContent = `${data.average}★ (${data.count} rating${data.count !== 1 ? 's' : ''})`;
       } else {
@@ -702,10 +698,7 @@
     }
   }
 
-  function sendSuggestion(btn) {
-    document.getElementById('chat-input').value = btn.textContent;
-    sendChatMessage();
-  }
+  function sendSuggestion(btn) { document.getElementById('chat-input').value = btn.textContent; sendChatMessage(); }
 
   function appendChatMsg(role, text) {
     const msgs = document.getElementById('chat-messages');
@@ -738,14 +731,9 @@
       });
       const data = await res.json();
       typingDiv.remove();
-      if (data.reply) {
-        appendChatMsg('bot', data.reply);
-        chatHistory.push({ role: 'assistant', content: data.reply });
-      } else { appendChatMsg('bot', 'Sorry, something went wrong. Try again!'); }
-    } catch (err) {
-      typingDiv.remove();
-      appendChatMsg('bot', 'Sorry, I could not connect. Try again!');
-    }
+      if (data.reply) { appendChatMsg('bot', data.reply); chatHistory.push({ role: 'assistant', content: data.reply }); }
+      else { appendChatMsg('bot', 'Sorry, something went wrong. Try again!'); }
+    } catch (err) { typingDiv.remove(); appendChatMsg('bot', 'Sorry, I could not connect. Try again!'); }
     document.getElementById('chat-send').disabled = false;
     input.focus();
   }
@@ -1012,8 +1000,7 @@
     try {
       const res = await fetch('/stripe/create-checkout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ tier }) });
       const data = await res.json();
-      if (data.error) { alert(data.error); }
-      else { window.location.href = data.checkout_url; }
+      if (data.error) { alert(data.error); } else { window.location.href = data.checkout_url; }
     } catch (err) { alert('Something went wrong. Please try again.'); }
   }
 
