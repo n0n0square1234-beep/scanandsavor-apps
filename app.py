@@ -62,6 +62,29 @@ def save_shared_recipe(share_id, recipe):
     with open(SHARED_RECIPES_FILE, "w", encoding="utf-8") as f:
         json.dump(recipes, f, ensure_ascii=False, indent=2)
 
+# ── Ratings helpers ──────────────────────────────────────────────────────────
+RATINGS_FILE = "ratings.json"
+
+def load_ratings():
+    if not os.path.exists(RATINGS_FILE):
+        return {}
+    with open(RATINGS_FILE, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+def save_rating(recipe_name, rating):
+    ratings = load_ratings()
+    if recipe_name not in ratings:
+        ratings[recipe_name] = []
+    ratings[recipe_name].append(rating)
+    with open(RATINGS_FILE, "w", encoding="utf-8") as f:
+        json.dump(ratings, f, ensure_ascii=False, indent=2)
+    all_ratings = ratings[recipe_name]
+    return {
+        'average': round(sum(all_ratings) / len(all_ratings), 1),
+        'count': len(all_ratings),
+        'user_rating': rating
+    }
+
 # ── Static page ─────────────────────────────────────────────────────────────
 @app.route('/')
 def index():
@@ -193,6 +216,28 @@ If a recipe is provided as context, use it to give specific helpful answers abou
         return jsonify({'reply': response.content[0].text})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+# ── Ratings routes ────────────────────────────────────────────────────────────
+@app.route('/rate-recipe', methods=['POST'])
+def rate_recipe():
+    data = request.json
+    recipe_name = data.get('recipe_name', '')
+    rating = data.get('rating', 0)
+    if not recipe_name or not (1 <= rating <= 5):
+        return jsonify({'error': 'Invalid rating'}), 400
+    result = save_rating(recipe_name, rating)
+    return jsonify(result)
+
+@app.route('/ratings/<path:recipe_name>', methods=['GET'])
+def get_rating(recipe_name):
+    ratings = load_ratings()
+    all_ratings = ratings.get(recipe_name, [])
+    if not all_ratings:
+        return jsonify({'average': 0, 'count': 0})
+    return jsonify({
+        'average': round(sum(all_ratings) / len(all_ratings), 1),
+        'count': len(all_ratings)
+    })
 
 # ── Favorites routes ──────────────────────────────────────────────────────────
 @app.route('/favorites', methods=['GET'])

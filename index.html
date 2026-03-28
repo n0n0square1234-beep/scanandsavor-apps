@@ -96,6 +96,14 @@
     .serving-btn:hover { background: #0F6E56; }
     .serving-count { font-size: 16px; font-weight: 700; color: #1a1a1a; min-width: 24px; text-align: center; }
     body.dark .serving-count { color: #eee; }
+    .rating-bar { display: flex; align-items: center; gap: 10px; background: #f5f5f0; border-radius: 10px; padding: 10px 14px; margin-top: 14px; }
+    body.dark .rating-bar { background: #2a2a2a; }
+    .rating-label { font-size: 13px; color: #888; flex: 1; }
+    .stars { display: flex; gap: 4px; }
+    .star { font-size: 24px; cursor: pointer; transition: transform 0.1s; line-height: 1; color: #ddd; }
+    .star:hover { transform: scale(1.2); }
+    .star.active { color: #F5A623; }
+    .rating-info { font-size: 12px; color: #888; white-space: nowrap; }
     .favorite-card { border: 1px solid #e5e5e5; border-radius: 12px; padding: 14px; margin-bottom: 8px; background: white; cursor: pointer; }
     body.dark .favorite-card { background: #1e1e1e; border-color: #333; }
     .favorite-card:hover { border-color: #1D9E75; }
@@ -202,8 +210,6 @@
     .copy-btn.copied { background: #888; }
     .share-close { width: 100%; padding: 10px; background: none; border: 1px solid #e5e5e5; border-radius: 10px; font-size: 14px; color: #888; cursor: pointer; }
     body.dark .share-close { border-color: #444; }
-
-    /* Chat styles */
     .chat-fab { position: fixed; bottom: 24px; right: 24px; width: 56px; height: 56px; background: #1D9E75; border-radius: 50%; border: none; cursor: pointer; box-shadow: 0 4px 16px rgba(29,158,117,0.4); display: flex; align-items: center; justify-content: center; font-size: 24px; z-index: 400; transition: transform 0.2s; }
     .chat-fab:hover { transform: scale(1.08); }
     .chat-fab .chat-badge { position: absolute; top: -2px; right: -2px; background: #c0392b; color: white; border-radius: 99px; font-size: 10px; font-weight: 700; padding: 2px 5px; display: none; }
@@ -342,6 +348,17 @@
         <button class="serving-btn" onclick="changeServings(1)">+</button>
       </div>
       <div class="recipe-body" id="recipe-body"></div>
+      <div class="rating-bar" id="rating-bar" style="display:none;">
+        <div class="rating-label">Rate this recipe</div>
+        <div class="stars" id="stars">
+          <span class="star" onclick="rateRecipe(1)" onmouseover="hoverStars(1)" onmouseout="resetStars()">★</span>
+          <span class="star" onclick="rateRecipe(2)" onmouseover="hoverStars(2)" onmouseout="resetStars()">★</span>
+          <span class="star" onclick="rateRecipe(3)" onmouseover="hoverStars(3)" onmouseout="resetStars()">★</span>
+          <span class="star" onclick="rateRecipe(4)" onmouseover="hoverStars(4)" onmouseout="resetStars()">★</span>
+          <span class="star" onclick="rateRecipe(5)" onmouseover="hoverStars(5)" onmouseout="resetStars()">★</span>
+        </div>
+        <div class="rating-info" id="rating-info"></div>
+      </div>
     </div>
   </div>
 
@@ -362,7 +379,6 @@
       <div style="font-size:14px;color:#888;margin-bottom:20px;">All this for just <strong style="color:#1D9E75;">$10/month</strong> on the Premium plan.</div>
       <button class="generate-btn" onclick="showPage('account', document.getElementById('nav-account'))">Upgrade to Premium</button>
     </div>
-
     <div id="planner-content" style="display:none;">
       <div class="plan-tabs">
         <button class="plan-tab active" id="tab-plan" onclick="switchPlanTab('plan', this)">Create Plan</button>
@@ -491,7 +507,6 @@
   💬
   <span class="chat-badge" id="chat-badge">1</span>
 </button>
-
 <div class="chat-window" id="chat-window">
   <div class="chat-header">
     <div>
@@ -584,6 +599,7 @@
   let baseIngredients = [];
   let chatHistory = [];
   let chatOpen = false;
+  let currentUserRating = 0;
 
   function toggleDarkMode() {
     document.body.classList.toggle('dark');
@@ -607,9 +623,54 @@
     if (data.user) currentUser = data.user;
     updateUserBar();
     updateAccountPage();
-    setTimeout(() => {
-      document.getElementById('chat-badge').classList.add('visible');
-    }, 3000);
+    setTimeout(() => { document.getElementById('chat-badge').classList.add('visible'); }, 3000);
+  }
+
+  // ── Rating functions ──────────────────────────────────────────────────────
+  function hoverStars(n) {
+    document.querySelectorAll('.star').forEach((s, i) => {
+      s.style.color = i < n ? '#F5A623' : '#ddd';
+    });
+  }
+
+  function resetStars() {
+    document.querySelectorAll('.star').forEach((s, i) => {
+      s.style.color = i < currentUserRating ? '#F5A623' : '#ddd';
+    });
+  }
+
+  async function rateRecipe(rating) {
+    if (!currentRecipe || !currentRecipe.title) return;
+    currentUserRating = rating;
+    resetStars();
+    try {
+      const res = await fetch('/rate-recipe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ recipe_name: currentRecipe.title, rating })
+      });
+      const data = await res.json();
+      if (data.average) {
+        document.getElementById('rating-info').textContent = `${data.average}★ (${data.count} rating${data.count !== 1 ? 's' : ''})`;
+      }
+    } catch (err) { console.log('Rating error:', err); }
+  }
+
+  async function loadRating(recipeName) {
+    currentUserRating = 0;
+    resetStars();
+    document.getElementById('rating-info').textContent = '';
+    document.getElementById('rating-bar').style.display = 'flex';
+    try {
+      const res = await fetch('/ratings/' + encodeURIComponent(recipeName), { credentials: 'include' });
+      const data = await res.json();
+      if (data.count > 0) {
+        document.getElementById('rating-info').textContent = `${data.average}★ (${data.count} rating${data.count !== 1 ? 's' : ''})`;
+      } else {
+        document.getElementById('rating-info').textContent = 'No ratings yet';
+      }
+    } catch (err) { document.getElementById('rating-info').textContent = ''; }
   }
 
   // ── Chat functions ────────────────────────────────────────────────────────
@@ -672,9 +733,7 @@
     }
     try {
       const res = await fetch('/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
         body: JSON.stringify({ message, recipe_context: recipeContext, history: chatHistory.slice(-6) })
       });
       const data = await res.json();
@@ -682,9 +741,7 @@
       if (data.reply) {
         appendChatMsg('bot', data.reply);
         chatHistory.push({ role: 'assistant', content: data.reply });
-      } else {
-        appendChatMsg('bot', 'Sorry, something went wrong. Try again!');
-      }
+      } else { appendChatMsg('bot', 'Sorry, something went wrong. Try again!'); }
     } catch (err) {
       typingDiv.remove();
       appendChatMsg('bot', 'Sorry, I could not connect. Try again!');
@@ -736,11 +793,9 @@
     const locked = document.getElementById('planner-locked');
     const content = document.getElementById('planner-content');
     if (!currentUser || currentUser.tier !== 'premium') {
-      locked.style.display = 'block';
-      content.style.display = 'none';
+      locked.style.display = 'block'; content.style.display = 'none';
     } else {
-      locked.style.display = 'none';
-      content.style.display = 'block';
+      locked.style.display = 'none'; content.style.display = 'block';
     }
   }
 
@@ -768,7 +823,6 @@
   function closeAuthModal() { document.getElementById('auth-modal').classList.remove('visible'); }
   function switchToSignup() { document.getElementById('modal-login').style.display = 'none'; document.getElementById('modal-signup').style.display = 'block'; }
   function switchToLogin() { document.getElementById('modal-signup').style.display = 'none'; document.getElementById('modal-login').style.display = 'block'; }
-
   function openRecipeModal(title, meta, bodyHTML) {
     document.getElementById('modal-recipe-title').textContent = title;
     document.getElementById('modal-recipe-meta').textContent = meta;
@@ -776,7 +830,6 @@
     document.getElementById('recipe-modal').classList.add('visible');
     document.getElementById('recipe-modal').scrollTop = 0;
   }
-
   function closeRecipeModal() { document.getElementById('recipe-modal').classList.remove('visible'); }
 
   async function shareRecipe() {
@@ -803,8 +856,7 @@
     const link = document.getElementById('share-link-text').textContent;
     navigator.clipboard.writeText(link).then(() => {
       const btn = document.getElementById('copy-btn');
-      btn.textContent = 'Copied!';
-      btn.classList.add('copied');
+      btn.textContent = 'Copied!'; btn.classList.add('copied');
       setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 2000);
     });
   }
@@ -819,33 +871,22 @@
     const instrHTML = (r.instructions || []).map((i, n) => `<li><b>${n+1}.</b> ${i}</li>`).join('');
     const macroHTML = r.calories ? `<div class="mrow"><span class="mb">🔥 ${r.calories} cal</span><span class="mb">💪 ${r.protein}g protein</span><span class="mb">🌾 ${r.carbs}g carbs</span><span class="mb">🥑 ${r.fat}g fat</span>${r.fiber?`<span class="mb">🌿 ${r.fiber}g fiber</span>`:''}</div>` : '';
     win.document.write(`<!DOCTYPE html><html><head><title>${title}</title><style>
-      *{box-sizing:border-box;margin:0;padding:0;}
-      @page{size:landscape;margin:0.3cm;}
+      *{box-sizing:border-box;margin:0;padding:0;}@page{size:landscape;margin:0.3cm;}
       body{font-family:-apple-system,sans-serif;font-size:9.5px;color:#1a1a1a;padding:0.2cm;}
-      h1{font-size:13px;margin-bottom:1px;}
-      .meta{color:#888;font-size:9px;margin-bottom:3px;padding-bottom:2px;border-bottom:1px solid #eee;}
-      .mrow{display:flex;flex-wrap:wrap;gap:2px;margin-bottom:4px;}
-      .mb{background:#f5f5f0;border-radius:3px;padding:1px 5px;font-size:9px;}
+      h1{font-size:13px;margin-bottom:1px;}.meta{color:#888;font-size:9px;margin-bottom:3px;padding-bottom:2px;border-bottom:1px solid #eee;}
+      .mrow{display:flex;flex-wrap:wrap;gap:2px;margin-bottom:4px;}.mb{background:#f5f5f0;border-radius:3px;padding:1px 5px;font-size:9px;}
       .two{display:grid;grid-template-columns:1fr 1.8fr;gap:10px;}
       h3{font-size:8px;text-transform:uppercase;letter-spacing:0.4px;color:#888;margin-bottom:2px;border-bottom:1px solid #eee;padding-bottom:1px;}
       ul{padding-left:10px;}li{margin-bottom:1px;line-height:1.2;font-size:9.5px;}
-      ol{padding-left:0;list-style:none;}ol li{margin-bottom:1px;line-height:1.2;font-size:9.5px;}
-      ol li b{color:#1D9E75;}
+      ol{padding-left:0;list-style:none;}ol li{margin-bottom:1px;line-height:1.2;font-size:9.5px;}ol li b{color:#1D9E75;}
       .tip{background:#E1F5EE;border-radius:3px;padding:3px 6px;margin-top:4px;font-size:9px;color:#0F6E56;}
-      .brand{text-align:center;margin-top:4px;font-size:8px;color:#bbb;border-top:1px solid #eee;padding-top:2px;}
-      .brand b{color:#1D9E75;}
+      .brand{text-align:center;margin-top:4px;font-size:8px;color:#bbb;border-top:1px solid #eee;padding-top:2px;}.brand b{color:#1D9E75;}
     </style></head><body>
-    <h1>${title}</h1>
-    <div class="meta">${meta}</div>
-    ${macroHTML}
-    <div class="two">
-      <div><h3>Ingredients</h3><ul>${ingHTML}</ul></div>
-      <div><h3>Instructions</h3><ol>${instrHTML}</ol></div>
-    </div>
+    <h1>${title}</h1><div class="meta">${meta}</div>${macroHTML}
+    <div class="two"><div><h3>Ingredients</h3><ul>${ingHTML}</ul></div><div><h3>Instructions</h3><ol>${instrHTML}</ol></div></div>
     ${r.tip?`<div class="tip"><b>Chef Tip:</b> ${r.tip}</div>`:''}
     <div class="brand">Generated by <b>Scan&Savor</b> — scanandsavor.onrender.com</div>
-    <script>window.onload=function(){window.print();}<\/script>
-    </body></html>`);
+    <script>window.onload=function(){window.print();}<\/script></body></html>`);
     win.document.close();
   }
 
@@ -875,9 +916,7 @@
     return baseIngredients.map(ing => {
       const amount = parseIngredientAmount(ing);
       if (amount === null) return ing;
-      const scaled = amount * ratio;
-      const formatted = formatAmount(scaled);
-      return ing.replace(/^[\d\s\/]+/, formatted + ' ');
+      return ing.replace(/^[\d\s\/]+/, formatAmount(amount * ratio) + ' ');
     });
   }
 
@@ -887,9 +926,8 @@
     currentServings = newServings;
     document.getElementById('serving-count').textContent = currentServings;
     const ratio = currentServings / baseServings;
-    const scaledIngredients = scaleIngredients(ratio);
     const ingList = document.getElementById('ing-list-scaled');
-    if (ingList) ingList.innerHTML = scaledIngredients.map(i => `<li style="margin-bottom:4px">${i}</li>`).join('');
+    if (ingList) ingList.innerHTML = scaleIngredients(ratio).map(i => `<li style="margin-bottom:4px">${i}</li>`).join('');
     if (currentRecipe) updateScaledMacros(ratio);
   }
 
@@ -929,12 +967,8 @@
         document.getElementById('modal-recipe-title').textContent = r.title || recipeName;
         document.getElementById('modal-recipe-meta').textContent = [r.time, r.servings + ' servings'].filter(Boolean).join(' · ');
         document.getElementById('modal-recipe-body').innerHTML = buildRecipeHTML(r);
-      } else {
-        document.getElementById('modal-recipe-body').innerHTML = '<div style="text-align:center;padding:1rem;color:#c0392b;">Could not load recipe. Try again.</div>';
-      }
-    } catch (err) {
-      document.getElementById('modal-recipe-body').innerHTML = '<div style="text-align:center;padding:1rem;color:#c0392b;">Could not load recipe. Try again.</div>';
-    }
+      } else { document.getElementById('modal-recipe-body').innerHTML = '<div style="text-align:center;padding:1rem;color:#c0392b;">Could not load recipe. Try again.</div>'; }
+    } catch (err) { document.getElementById('modal-recipe-body').innerHTML = '<div style="text-align:center;padding:1rem;color:#c0392b;">Could not load recipe. Try again.</div>'; }
   }
 
   async function doLogin() {
@@ -1015,16 +1049,12 @@
     const input = document.getElementById('ing-input');
     const val = input.value.trim();
     if (!val) return;
-    ingredients.push(val);
-    renderTags();
-    input.value = '';
+    ingredients.push(val); renderTags(); input.value = '';
   }
 
   function renderTags() {
-    const container = document.getElementById('tags');
-    container.innerHTML = ingredients.map((ing, i) =>
-      `<div class="tag">${ing}<button onclick="removeIngredient(${i})">x</button></div>`
-    ).join('');
+    document.getElementById('tags').innerHTML = ingredients.map((ing, i) =>
+      `<div class="tag">${ing}<button onclick="removeIngredient(${i})">x</button></div>`).join('');
   }
 
   function removeIngredient(i) { ingredients.splice(i, 1); renderTags(); }
@@ -1050,8 +1080,7 @@
         if (response.status === 401) {
           if (data.error === 'signup_required') { openAuthModal('signup', data.message); break; }
           currentUser = null; updateUserBar(); updateAccountPage();
-          openAuthModal('login', 'Your session expired. Please log in again.');
-          break;
+          openAuthModal('login', 'Your session expired. Please log in again.'); break;
         }
         if (data.error === 'upgrade_required') { alert(data.message); break; }
         if (data.ingredients) {
@@ -1088,17 +1117,17 @@
       else {
         const r = parseRecipe(data.recipe);
         currentRecipe = { ...r, meal_type: '', cook_time: '' };
-        const saveBtn = document.getElementById('save-btn');
-        saveBtn.textContent = currentUser ? 'Save recipe' : 'Sign up to save';
-        saveBtn.classList.remove('saved');
+        document.getElementById('save-btn').textContent = currentUser ? 'Save recipe' : 'Sign up to save';
+        document.getElementById('save-btn').classList.remove('saved');
         document.getElementById('recipe-title').innerHTML = r.title || recipeName;
         document.getElementById('recipe-meta').textContent = [r.time, r.servings + ' servings'].filter(Boolean).join(' · ');
         document.getElementById('recipe-body').innerHTML = buildRecipeHTML(r);
         initServingAdjuster(r);
         document.getElementById('recipe-card').classList.add('visible');
+        if (r.title) loadRating(r.title);
+        updateChatSuggestions();
         input.value = '';
         window.scrollTo(0, document.getElementById('recipe-card').offsetTop);
-        updateChatSuggestions();
       }
     } catch (err) { showError('Something went wrong. Try again!'); }
     loading.style.display = 'none';
@@ -1138,8 +1167,10 @@
       const fatMatch = line.match(/FAT:\s*([^|]+)/);
       if (nameMatch && descMatch) {
         const name = nameMatch[1].trim(); const desc = descMatch[1].trim();
-        const cal = calMatch ? parseNum(calMatch[1]) : ''; const protein = proteinMatch ? parseNum(proteinMatch[1]) : '';
-        const carbs = carbsMatch ? parseNum(carbsMatch[1]) : ''; const fat = fatMatch ? parseNum(fatMatch[1]) : '';
+        const cal = calMatch ? parseNum(calMatch[1]) : '';
+        const protein = proteinMatch ? parseNum(proteinMatch[1]) : '';
+        const carbs = carbsMatch ? parseNum(carbsMatch[1]) : '';
+        const fat = fatMatch ? parseNum(fatMatch[1]) : '';
         savedRecipeNames.push(name);
         const div = document.createElement('div');
         div.className = 'recipe-option';
@@ -1178,9 +1209,8 @@
       else {
         const r = parseRecipe(data.recipe);
         currentRecipe = { ...r, meal_type: selectedMeal, cook_time: selectedTime };
-        const saveBtn = document.getElementById('save-btn');
-        saveBtn.textContent = currentUser ? 'Save recipe' : 'Sign up to save';
-        saveBtn.classList.remove('saved');
+        document.getElementById('save-btn').textContent = currentUser ? 'Save recipe' : 'Sign up to save';
+        document.getElementById('save-btn').classList.remove('saved');
         const mealBadge = selectedMeal ? `<span style="background:#E1F5EE;color:#0F6E56;border-radius:99px;padding:2px 10px;font-size:12px;font-weight:600;margin-left:8px;text-transform:capitalize">${selectedMeal}</span>` : '';
         const timeBadge = selectedTime ? `<span style="background:#E6F1FB;color:#185FA5;border-radius:99px;padding:2px 10px;font-size:12px;font-weight:600;margin-left:6px;">⚡ ${selectedTime}</span>` : '';
         document.getElementById('recipe-title').innerHTML = (r.title || recipeName) + ' ' + mealBadge + timeBadge;
@@ -1188,6 +1218,7 @@
         document.getElementById('recipe-body').innerHTML = buildRecipeHTML(r);
         initServingAdjuster(r);
         document.getElementById('recipe-card').classList.add('visible');
+        if (r.title) loadRating(r.title);
         updateChatSuggestions();
       }
     } catch (err) { showError('Something went wrong. Make sure your backend is running!'); }
@@ -1197,6 +1228,7 @@
   function goBack() {
     document.getElementById('recipe-card').classList.remove('visible');
     document.getElementById('serving-adjuster').style.display = 'none';
+    document.getElementById('rating-bar').style.display = 'none';
     if (savedRecipeListHTML) {
       document.getElementById('recipe-list-container').innerHTML = savedRecipeListHTML;
       reattachRecipeListeners();
@@ -1248,10 +1280,7 @@
     const selected = [];
     document.querySelectorAll('input[type="radio"]:checked').forEach(input => {
       const label = input.closest('label');
-      if (label) {
-        const nameEl = label.querySelector('div div:first-child');
-        if (nameEl) selected.push(nameEl.textContent.trim());
-      }
+      if (label) { const nameEl = label.querySelector('div div:first-child'); if (nameEl) selected.push(nameEl.textContent.trim()); }
     });
     return selected;
   }
@@ -1267,8 +1296,7 @@
     try {
       const response = await fetch('/grocery-list', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ selected_meals: selectedMeals, dietary_restrictions: diets }) });
       const data = await response.json();
-      if (data.error) { alert(data.error); }
-      else { renderGroceryList(data.grocery_list); }
+      if (data.error) { alert(data.error); } else { renderGroceryList(data.grocery_list); }
     } catch (err) { alert('Something went wrong. Try again!'); }
     btn.disabled = false; loading.style.display = 'none';
   }
@@ -1280,8 +1308,7 @@
     card.className = 'card';
     card.innerHTML = '<div class="section-label">Your grocery list</div>';
     const lines = text.split('\n').map(l => l.trim()).filter(l => l);
-    let currentSection = null;
-    let groceryTotal = null;
+    let currentSection = null; let groceryTotal = null;
     for (const line of lines) {
       if (line.startsWith('GROCERY_TOTAL:')) {
         const match = line.match(/\$?([\d.]+)/);
@@ -1290,12 +1317,10 @@
         const sectionDiv = document.createElement('div');
         sectionDiv.className = 'grocery-section';
         sectionDiv.innerHTML = '<div class="grocery-section-title">' + line.replace(':', '') + '</div>';
-        currentSection = sectionDiv;
-        card.appendChild(sectionDiv);
+        currentSection = sectionDiv; card.appendChild(sectionDiv);
       } else if (currentSection) {
         const parts = line.replace('-', '').trim().split('|');
-        const itemName = parts[0].trim();
-        const itemPrice = parts[1] ? parts[1].trim() : '';
+        const itemName = parts[0].trim(); const itemPrice = parts[1] ? parts[1].trim() : '';
         const itemDiv = document.createElement('div');
         itemDiv.className = 'grocery-item';
         itemDiv.innerHTML = `<input type="checkbox" onchange="toggleGroceryItem(this)" /><span style="flex:1;">${itemName}</span>${itemPrice ? `<span style="font-size:13px;color:#1D9E75;font-weight:600;white-space:nowrap;">${itemPrice}</span>` : ''}`;
@@ -1343,10 +1368,7 @@
           div.className = 'saved-plan-card';
           div.innerHTML = `
             <div class="saved-plan-header">
-              <div>
-                <div class="saved-plan-title">${plan.title}</div>
-                <div class="saved-plan-meta">Saved on ${plan.date}</div>
-              </div>
+              <div><div class="saved-plan-title">${plan.title}</div><div class="saved-plan-meta">Saved on ${plan.date}</div></div>
               <button class="delete-btn" onclick="deleteSavedPlan(${i})">x</button>
             </div>
             <div style="margin-top:6px;">
@@ -1372,13 +1394,10 @@
     container.innerHTML = '';
     const lines = text.split('\n').map(l => l.trim()).filter(l => l);
     const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-    let days_data = {};
-    let currentDay = 0;
+    let days_data = {}; let currentDay = 0;
     for (const line of lines) {
-      if (line.startsWith('DAY ')) {
-        currentDay++;
-        days_data[currentDay] = { breakfast: [], lunch: [], dinner: [] };
-      } else if (!line.startsWith('ESTIMATED_TOTAL')) {
+      if (line.startsWith('DAY ')) { currentDay++; days_data[currentDay] = { breakfast: [], lunch: [], dinner: [] }; }
+      else if (!line.startsWith('ESTIMATED_TOTAL')) {
         const types = [
           { key: 'BREAKFAST_1', meal: 'breakfast' }, { key: 'BREAKFAST_2', meal: 'breakfast' }, { key: 'BREAKFAST_3', meal: 'breakfast' },
           { key: 'LUNCH_1', meal: 'lunch' }, { key: 'LUNCH_2', meal: 'lunch' }, { key: 'LUNCH_3', meal: 'lunch' },
@@ -1444,11 +1463,9 @@
     const name = input.name;
     document.querySelectorAll(`input[name="${name}"]`).forEach(inp => {
       const lbl = inp.closest('label');
-      lbl.style.borderColor = '#e5e5e5';
-      lbl.style.background = 'white';
+      lbl.style.borderColor = '#e5e5e5'; lbl.style.background = 'white';
     });
-    label.style.borderColor = '#1D9E75';
-    label.style.background = '#f9fffe';
+    label.style.borderColor = '#1D9E75'; label.style.background = '#f9fffe';
   }
 
   function buildRecipeHTML(r) {
@@ -1550,8 +1567,9 @@
     document.getElementById('save-btn').textContent = 'Saved!';
     document.getElementById('save-btn').classList.add('saved');
     document.getElementById('recipe-card').classList.add('visible');
-    window.scrollTo(0, 0);
+    if (fav.title) loadRating(fav.title);
     updateChatSuggestions();
+    window.scrollTo(0, 0);
   }
 
   async function deleteFavorite(index) {
