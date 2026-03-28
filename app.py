@@ -11,7 +11,7 @@ from dotenv import load_dotenv
 import stripe
 
 from models import db, User
-from recipe_generator import generate_recipe_ideas, generate_full_recipe, analyze_image_ingredients, generate_meal_plan_ai, generate_grocery_list_ai
+from recipe_generator import generate_recipe_list, generate_full_recipe, analyze_image_ingredients, generate_meal_plan_ai, generate_grocery_list_ai
 from favorites import load_favorites, save_favorite, remove_favorite
 from meal_plans import load_meal_plans, save_meal_plan, remove_meal_plan
 
@@ -119,7 +119,7 @@ def recipe_list():
     if not ingredients:
         return jsonify({'error': 'No ingredients provided'}), 400
     try:
-        result = generate_recipe_ideas(ingredients, dietary_restrictions, meal_type, cook_time)
+        result = generate_recipe_list(ingredients, dietary_restrictions, meal_type, cook_time)
         return jsonify({'recipe_list': result})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
