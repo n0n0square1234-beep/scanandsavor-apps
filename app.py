@@ -105,12 +105,9 @@ def save_to_history(user_id, recipe):
     key = str(user_id)
     if key not in history:
         history[key] = []
-    # Remove duplicate if same recipe already in history
     history[key] = [r for r in history[key] if r.get('title') != recipe.get('title')]
-    # Add to front with timestamp
     recipe['viewed_at'] = datetime.utcnow().strftime('%b %d, %Y')
     history[key].insert(0, recipe)
-    # Keep only last 20
     history[key] = history[key][:20]
     with open(HISTORY_FILE, "w", encoding="utf-8") as f:
         json.dump(history, f, ensure_ascii=False, indent=2)
@@ -306,6 +303,23 @@ def get_rating(recipe_name):
         'count': len(all_ratings),
         'user_rating': user_rating
     })
+
+@app.route('/ratings/top', methods=['GET'])
+def get_top_ratings():
+    ratings = load_ratings()
+    top = []
+    for recipe_name, recipe_ratings in ratings.items():
+        if not recipe_ratings:
+            continue
+        all_r = list(recipe_ratings.values())
+        if len(all_r) >= 1:
+            top.append({
+                'title': recipe_name,
+                'average': round(sum(all_r) / len(all_r), 1),
+                'count': len(all_r)
+            })
+    top.sort(key=lambda x: (x['average'], x['count']), reverse=True)
+    return jsonify({'top': top[:10]})
 
 # ── Favorites routes ──────────────────────────────────────────────────────────
 @app.route('/favorites', methods=['GET'])

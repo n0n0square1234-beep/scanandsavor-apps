@@ -16,8 +16,8 @@
     .tagline { font-size: 14px; color: #888; margin-top: 4px; }
     .dark-toggle { position: absolute; top: 2rem; right: 0; background: none; border: 1px solid #e5e5e5; border-radius: 10px; padding: 6px 10px; font-size: 18px; cursor: pointer; line-height: 1; }
     body.dark .dark-toggle { border-color: #444; }
-    .nav { display: flex; gap: 6px; margin-bottom: 1rem; }
-    .nav-btn { flex: 1; padding: 10px 4px; border: 1px solid #e5e5e5; border-radius: 10px; font-size: 12px; cursor: pointer; background: white; color: #666; font-weight: 500; transition: all 0.2s; }
+    .nav { display: flex; gap: 5px; margin-bottom: 1rem; }
+    .nav-btn { flex: 1; padding: 10px 2px; border: 1px solid #e5e5e5; border-radius: 10px; font-size: 11px; cursor: pointer; background: white; color: #666; font-weight: 500; transition: all 0.2s; }
     body.dark .nav-btn { background: #1e1e1e; border-color: #333; color: #aaa; }
     .nav-btn.active { background: #1D9E75; color: white; border-color: #1D9E75; }
     .page { display: none; }
@@ -103,6 +103,28 @@
     .star { font-size: 24px; cursor: pointer; transition: transform 0.1s; line-height: 1; color: #ddd; }
     .star:hover { transform: scale(1.2); }
     .rating-info { font-size: 12px; color: #888; white-space: nowrap; }
+    .cookbook-section-title { font-size: 17px; font-weight: 700; color: #1a1a1a; margin: 16px 0 10px; display: flex; align-items: center; gap: 8px; }
+    body.dark .cookbook-section-title { color: #eee; }
+    .cookbook-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 8px; }
+    .cookbook-card { background: white; border-radius: 14px; padding: 14px; cursor: pointer; border: 1px solid #e5e5e5; transition: all 0.2s; position: relative; overflow: hidden; }
+    body.dark .cookbook-card { background: #1e1e1e; border-color: #333; }
+    .cookbook-card:hover { border-color: #1D9E75; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(29,158,117,0.15); }
+    .cookbook-card-emoji { font-size: 32px; margin-bottom: 8px; display: block; }
+    .cookbook-card-name { font-size: 14px; font-weight: 600; color: #1a1a1a; line-height: 1.3; }
+    body.dark .cookbook-card-name { color: #eee; }
+    .cookbook-card-desc { font-size: 12px; color: #888; margin-top: 3px; }
+    .cookbook-card-loading { position: absolute; inset: 0; background: rgba(29,158,117,0.08); display: flex; align-items: center; justify-content: center; border-radius: 14px; font-size: 12px; color: #1D9E75; font-weight: 600; display: none; }
+    .cookbook-card.loading .cookbook-card-loading { display: flex; }
+    .cookbook-card.loading .cookbook-card-emoji { opacity: 0.4; }
+    .cookbook-card.loading .cookbook-card-name { opacity: 0.4; }
+    .top-rated-card { display: flex; align-items: center; gap: 12px; background: white; border-radius: 12px; padding: 12px 14px; margin-bottom: 8px; cursor: pointer; border: 1px solid #e5e5e5; transition: all 0.2s; }
+    body.dark .top-rated-card { background: #1e1e1e; border-color: #333; }
+    .top-rated-card:hover { border-color: #F5A623; }
+    .top-rated-rank { font-size: 18px; font-weight: 700; color: #F5A623; min-width: 28px; }
+    .top-rated-name { font-size: 14px; font-weight: 600; color: #1a1a1a; flex: 1; }
+    body.dark .top-rated-name { color: #eee; }
+    .top-rated-stars { font-size: 12px; color: #F5A623; font-weight: 600; }
+    .top-rated-count { font-size: 11px; color: #bbb; }
     .history-card { border: 1px solid #e5e5e5; border-radius: 12px; padding: 14px; margin-bottom: 8px; background: white; cursor: pointer; }
     body.dark .history-card { background: #1e1e1e; border-color: #333; }
     .history-card:hover { border-color: #1D9E75; }
@@ -264,12 +286,14 @@
 
   <div class="nav">
     <button class="nav-btn active" id="nav-generate" onclick="showPage('generate', this)">Generate</button>
+    <button class="nav-btn" id="nav-cookbook" onclick="showPage('cookbook', this)">Cookbook</button>
     <button class="nav-btn" id="nav-history" onclick="showPage('history', this)">History</button>
-    <button class="nav-btn" id="nav-favorites" onclick="showPage('favorites', this)">Favorites</button>
+    <button class="nav-btn" id="nav-favorites" onclick="showPage('favorites', this)">Saved</button>
     <button class="nav-btn" id="nav-planner" onclick="showPage('planner', this)">Planner</button>
     <button class="nav-btn" id="nav-account" onclick="showPage('account', this)">Account</button>
   </div>
 
+  <!-- Generate Page -->
   <div id="page-generate" class="page active">
     <div class="card" style="margin-bottom:1rem;">
       <div class="section-label">Search for a recipe</div>
@@ -279,7 +303,6 @@
       </div>
       <div style="font-size:12px;color:#bbb;margin-top:6px;">Search any recipe by name and we'll generate it for you!</div>
     </div>
-
     <div class="card">
       <div class="section-label">Your ingredients</div>
       <div class="upload-box" id="upload-box" onclick="handlePhotoClick()">
@@ -295,7 +318,6 @@
       </div>
       <div class="tags" id="tags"></div>
     </div>
-
     <div class="card">
       <div class="section-label">What meal is this for?</div>
       <div class="meal-grid">
@@ -305,7 +327,6 @@
         <div class="meal-chip" onclick="selectMeal(this)" data-meal="dessert"><div class="meal-icon">🍰</div>Dessert</div>
       </div>
     </div>
-
     <div class="card">
       <div class="section-label">How much time do you have?</div>
       <div class="meal-grid">
@@ -315,7 +336,6 @@
         <div class="meal-chip" onclick="selectTime(this)" data-time="2+ hours"><div class="meal-icon">👨‍🍳</div>2+ hrs</div>
       </div>
     </div>
-
     <div class="card">
       <div class="section-label">Dietary preferences</div>
       <div class="diet-grid">
@@ -333,12 +353,10 @@
         <div class="diet-chip" onclick="toggleDiet(this)">Paleo</div>
       </div>
     </div>
-
     <button class="generate-btn" onclick="getRecipeList()" id="gen-btn">Show me recipe ideas</button>
     <div class="loading" id="loading">Finding recipe ideas for you...</div>
     <div class="error" id="error"></div>
     <div id="recipe-list-container"></div>
-
     <div class="card recipe-card" id="recipe-card">
       <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;">
         <button class="back-btn" style="margin:0;" onclick="goBack()">← Back</button>
@@ -369,11 +387,89 @@
     </div>
   </div>
 
+  <!-- Cookbook Page -->
+  <div id="page-cookbook" class="page">
+    <div id="cookbook-container">
+      <div id="top-rated-section" style="display:none;">
+        <div class="cookbook-section-title">⭐ Top Rated</div>
+        <div id="top-rated-list"></div>
+      </div>
+
+      <div class="cookbook-section-title">🍳 Breakfast</div>
+      <div class="cookbook-grid">
+        <div class="cookbook-card" onclick="cookbookRecipe(this, 'Fluffy Buttermilk Pancakes')"><span class="cookbook-card-emoji">🥞</span><div class="cookbook-card-name">Fluffy Buttermilk Pancakes</div><div class="cookbook-card-desc">Classic weekend stack</div><div class="cookbook-card-loading">Generating...</div></div>
+        <div class="cookbook-card" onclick="cookbookRecipe(this, 'Avocado Toast with Eggs')"><span class="cookbook-card-emoji">🥑</span><div class="cookbook-card-name">Avocado Toast with Eggs</div><div class="cookbook-card-desc">Trendy & nutritious</div><div class="cookbook-card-loading">Generating...</div></div>
+        <div class="cookbook-card" onclick="cookbookRecipe(this, 'Veggie Omelette')"><span class="cookbook-card-emoji">🍳</span><div class="cookbook-card-name">Veggie Omelette</div><div class="cookbook-card-desc">Quick protein-packed start</div><div class="cookbook-card-loading">Generating...</div></div>
+        <div class="cookbook-card" onclick="cookbookRecipe(this, 'Overnight Oats')"><span class="cookbook-card-emoji">🥣</span><div class="cookbook-card-name">Overnight Oats</div><div class="cookbook-card-desc">Prep the night before</div><div class="cookbook-card-loading">Generating...</div></div>
+        <div class="cookbook-card" onclick="cookbookRecipe(this, 'French Toast')"><span class="cookbook-card-emoji">🍞</span><div class="cookbook-card-name">French Toast</div><div class="cookbook-card-desc">Golden and custardy</div><div class="cookbook-card-loading">Generating...</div></div>
+        <div class="cookbook-card" onclick="cookbookRecipe(this, 'Breakfast Burrito')"><span class="cookbook-card-emoji">🌯</span><div class="cookbook-card-name">Breakfast Burrito</div><div class="cookbook-card-desc">Eggs, cheese & salsa</div><div class="cookbook-card-loading">Generating...</div></div>
+      </div>
+
+      <div class="cookbook-section-title">🥗 Lunch</div>
+      <div class="cookbook-grid">
+        <div class="cookbook-card" onclick="cookbookRecipe(this, 'Grilled Chicken Caesar Salad')"><span class="cookbook-card-emoji">🥗</span><div class="cookbook-card-name">Chicken Caesar Salad</div><div class="cookbook-card-desc">Classic restaurant favorite</div><div class="cookbook-card-loading">Generating...</div></div>
+        <div class="cookbook-card" onclick="cookbookRecipe(this, 'BLT Club Sandwich')"><span class="cookbook-card-emoji">🥪</span><div class="cookbook-card-name">BLT Club Sandwich</div><div class="cookbook-card-desc">Crispy bacon & fresh tomato</div><div class="cookbook-card-loading">Generating...</div></div>
+        <div class="cookbook-card" onclick="cookbookRecipe(this, 'Tomato Basil Soup')"><span class="cookbook-card-emoji">🍲</span><div class="cookbook-card-name">Tomato Basil Soup</div><div class="cookbook-card-desc">Creamy & comforting</div><div class="cookbook-card-loading">Generating...</div></div>
+        <div class="cookbook-card" onclick="cookbookRecipe(this, 'Tuna Poke Bowl')"><span class="cookbook-card-emoji">🍱</span><div class="cookbook-card-name">Tuna Poke Bowl</div><div class="cookbook-card-desc">Fresh Hawaiian bowl</div><div class="cookbook-card-loading">Generating...</div></div>
+        <div class="cookbook-card" onclick="cookbookRecipe(this, 'Caprese Panini')"><span class="cookbook-card-emoji">🫓</span><div class="cookbook-card-name">Caprese Panini</div><div class="cookbook-card-desc">Mozzarella & tomato melt</div><div class="cookbook-card-loading">Generating...</div></div>
+        <div class="cookbook-card" onclick="cookbookRecipe(this, 'Chicken Quesadilla')"><span class="cookbook-card-emoji">🫔</span><div class="cookbook-card-name">Chicken Quesadilla</div><div class="cookbook-card-desc">Cheesy & golden crisp</div><div class="cookbook-card-loading">Generating...</div></div>
+      </div>
+
+      <div class="cookbook-section-title">🍽️ Dinner</div>
+      <div class="cookbook-grid">
+        <div class="cookbook-card" onclick="cookbookRecipe(this, 'Spaghetti Bolognese')"><span class="cookbook-card-emoji">🍝</span><div class="cookbook-card-name">Spaghetti Bolognese</div><div class="cookbook-card-desc">Italian Sunday classic</div><div class="cookbook-card-loading">Generating...</div></div>
+        <div class="cookbook-card" onclick="cookbookRecipe(this, 'Butter Chicken Curry')"><span class="cookbook-card-emoji">🍛</span><div class="cookbook-card-name">Butter Chicken Curry</div><div class="cookbook-card-desc">Rich & aromatic</div><div class="cookbook-card-loading">Generating...</div></div>
+        <div class="cookbook-card" onclick="cookbookRecipe(this, 'Garlic Butter Salmon')"><span class="cookbook-card-emoji">🐟</span><div class="cookbook-card-name">Garlic Butter Salmon</div><div class="cookbook-card-desc">20-minute weeknight winner</div><div class="cookbook-card-loading">Generating...</div></div>
+        <div class="cookbook-card" onclick="cookbookRecipe(this, 'Chicken Tacos')"><span class="cookbook-card-emoji">🌮</span><div class="cookbook-card-name">Chicken Tacos</div><div class="cookbook-card-desc">Street-style with fresh toppings</div><div class="cookbook-card-loading">Generating...</div></div>
+        <div class="cookbook-card" onclick="cookbookRecipe(this, 'Beef Stir Fry')"><span class="cookbook-card-emoji">🥩</span><div class="cookbook-card-name">Beef Stir Fry</div><div class="cookbook-card-desc">Quick high-heat cooking</div><div class="cookbook-card-loading">Generating...</div></div>
+        <div class="cookbook-card" onclick="cookbookRecipe(this, 'Roasted Lemon Herb Chicken')"><span class="cookbook-card-emoji">🍗</span><div class="cookbook-card-name">Lemon Herb Chicken</div><div class="cookbook-card-desc">Juicy oven-roasted</div><div class="cookbook-card-loading">Generating...</div></div>
+        <div class="cookbook-card" onclick="cookbookRecipe(this, 'Shrimp Scampi Pasta')"><span class="cookbook-card-emoji">🦐</span><div class="cookbook-card-name">Shrimp Scampi Pasta</div><div class="cookbook-card-desc">Garlic white wine sauce</div><div class="cookbook-card-loading">Generating...</div></div>
+        <div class="cookbook-card" onclick="cookbookRecipe(this, 'Beef Tacos')"><span class="cookbook-card-emoji">🌯</span><div class="cookbook-card-name">Classic Beef Tacos</div><div class="cookbook-card-desc">Family taco night staple</div><div class="cookbook-card-loading">Generating...</div></div>
+      </div>
+
+      <div class="cookbook-section-title">🍰 Desserts</div>
+      <div class="cookbook-grid">
+        <div class="cookbook-card" onclick="cookbookRecipe(this, 'Chocolate Chip Cookies')"><span class="cookbook-card-emoji">🍪</span><div class="cookbook-card-name">Chocolate Chip Cookies</div><div class="cookbook-card-desc">Chewy bakery-style</div><div class="cookbook-card-loading">Generating...</div></div>
+        <div class="cookbook-card" onclick="cookbookRecipe(this, 'Creamy Cheesecake')"><span class="cookbook-card-emoji">🍰</span><div class="cookbook-card-name">Creamy Cheesecake</div><div class="cookbook-card-desc">New York style classic</div><div class="cookbook-card-loading">Generating...</div></div>
+        <div class="cookbook-card" onclick="cookbookRecipe(this, 'Fudgy Brownies')"><span class="cookbook-card-emoji">🍫</span><div class="cookbook-card-name">Fudgy Brownies</div><div class="cookbook-card-desc">Dense & chocolatey</div><div class="cookbook-card-loading">Generating...</div></div>
+        <div class="cookbook-card" onclick="cookbookRecipe(this, 'Banana Bread')"><span class="cookbook-card-emoji">🍌</span><div class="cookbook-card-name">Banana Bread</div><div class="cookbook-card-desc">Moist & perfectly sweet</div><div class="cookbook-card-loading">Generating...</div></div>
+        <div class="cookbook-card" onclick="cookbookRecipe(this, 'Vanilla Panna Cotta')"><span class="cookbook-card-emoji">🍮</span><div class="cookbook-card-name">Vanilla Panna Cotta</div><div class="cookbook-card-desc">Silky Italian classic</div><div class="cookbook-card-loading">Generating...</div></div>
+        <div class="cookbook-card" onclick="cookbookRecipe(this, 'Apple Crumble')"><span class="cookbook-card-emoji">🍎</span><div class="cookbook-card-name">Apple Crumble</div><div class="cookbook-card-desc">Warm with vanilla ice cream</div><div class="cookbook-card-loading">Generating...</div></div>
+      </div>
+
+      <div class="cookbook-section-title">🥦 Healthy</div>
+      <div class="cookbook-grid">
+        <div class="cookbook-card" onclick="cookbookRecipe(this, 'Quinoa Buddha Bowl')"><span class="cookbook-card-emoji">🥙</span><div class="cookbook-card-name">Quinoa Buddha Bowl</div><div class="cookbook-card-desc">Colorful & nutritious</div><div class="cookbook-card-loading">Generating...</div></div>
+        <div class="cookbook-card" onclick="cookbookRecipe(this, 'Grilled Salmon with Asparagus')"><span class="cookbook-card-emoji">🥦</span><div class="cookbook-card-name">Salmon & Asparagus</div><div class="cookbook-card-desc">Omega-3 powerhouse</div><div class="cookbook-card-loading">Generating...</div></div>
+        <div class="cookbook-card" onclick="cookbookRecipe(this, 'Lentil Soup')"><span class="cookbook-card-emoji">🫘</span><div class="cookbook-card-name">Hearty Lentil Soup</div><div class="cookbook-card-desc">Plant protein packed</div><div class="cookbook-card-loading">Generating...</div></div>
+        <div class="cookbook-card" onclick="cookbookRecipe(this, 'Greek Salad')"><span class="cookbook-card-emoji">🫒</span><div class="cookbook-card-name">Classic Greek Salad</div><div class="cookbook-card-desc">Fresh Mediterranean flavors</div><div class="cookbook-card-loading">Generating...</div></div>
+        <div class="cookbook-card" onclick="cookbookRecipe(this, 'Turkey Lettuce Wraps')"><span class="cookbook-card-emoji">🥬</span><div class="cookbook-card-name">Turkey Lettuce Wraps</div><div class="cookbook-card-desc">Low carb & satisfying</div><div class="cookbook-card-loading">Generating...</div></div>
+        <div class="cookbook-card" onclick="cookbookRecipe(this, 'Cauliflower Fried Rice')"><span class="cookbook-card-emoji">🌾</span><div class="cookbook-card-name">Cauliflower Fried Rice</div><div class="cookbook-card-desc">Low carb takeout fake-out</div><div class="cookbook-card-loading">Generating...</div></div>
+      </div>
+
+      <div class="cookbook-section-title">🍕 Comfort Food</div>
+      <div class="cookbook-grid">
+        <div class="cookbook-card" onclick="cookbookRecipe(this, 'Homemade Margherita Pizza')"><span class="cookbook-card-emoji">🍕</span><div class="cookbook-card-name">Margherita Pizza</div><div class="cookbook-card-desc">Homemade dough & sauce</div><div class="cookbook-card-loading">Generating...</div></div>
+        <div class="cookbook-card" onclick="cookbookRecipe(this, 'Mac and Cheese')"><span class="cookbook-card-emoji">🧀</span><div class="cookbook-card-name">Mac and Cheese</div><div class="cookbook-card-desc">Ultimate cheesy comfort</div><div class="cookbook-card-loading">Generating...</div></div>
+        <div class="cookbook-card" onclick="cookbookRecipe(this, 'Classic Beef Burger')"><span class="cookbook-card-emoji">🍔</span><div class="cookbook-card-name">Classic Beef Burger</div><div class="cookbook-card-desc">Juicy homemade patty</div><div class="cookbook-card-loading">Generating...</div></div>
+        <div class="cookbook-card" onclick="cookbookRecipe(this, 'Chicken Pot Pie')"><span class="cookbook-card-emoji">🥧</span><div class="cookbook-card-name">Chicken Pot Pie</div><div class="cookbook-card-desc">Flaky crust & creamy filling</div><div class="cookbook-card-loading">Generating...</div></div>
+        <div class="cookbook-card" onclick="cookbookRecipe(this, 'Beef Chili')"><span class="cookbook-card-emoji">🌶️</span><div class="cookbook-card-name">Hearty Beef Chili</div><div class="cookbook-card-desc">Bold & slow-simmered</div><div class="cookbook-card-loading">Generating...</div></div>
+        <div class="cookbook-card" onclick="cookbookRecipe(this, 'Loaded Baked Potato Soup')"><span class="cookbook-card-emoji">🥔</span><div class="cookbook-card-name">Baked Potato Soup</div><div class="cookbook-card-desc">Loaded with toppings</div><div class="cookbook-card-loading">Generating...</div></div>
+      </div>
+    </div>
+  </div>
+
   <!-- History Page -->
   <div id="page-history" class="page">
     <div id="history-container"></div>
   </div>
 
+  <!-- Favorites Page -->
+  <div id="page-favorites" class="page">
+    <div id="favorites-container"></div>
+  </div>
+
+  <!-- Planner Page -->
   <div id="page-planner" class="page">
     <div id="planner-locked" class="premium-lock" style="display:none;">
       <div class="premium-lock-icon">📅</div>
@@ -433,10 +529,7 @@
     </div>
   </div>
 
-  <div id="page-favorites" class="page">
-    <div id="favorites-container"></div>
-  </div>
-
+  <!-- Account Page -->
   <div id="page-account" class="page">
     <div id="account-guest" style="display:none;">
       <div class="unlock-banner">
@@ -446,30 +539,9 @@
       <div class="card">
         <div class="section-label">Choose your plan</div>
         <div class="tier-cards">
-          <div class="tier-card">
-            <div class="tier-card-name">Free</div>
-            <div class="tier-card-price">$0</div>
-            <div class="tier-card-feature">5 photo scans</div>
-            <div class="tier-card-feature">per month</div>
-            <div class="tier-card-feature">Save favorites</div>
-            <button class="tier-card-btn" onclick="openAuthModal('signup')">Sign up</button>
-          </div>
-          <div class="tier-card featured">
-            <div class="tier-card-name">Basic</div>
-            <div class="tier-card-price">$5</div>
-            <div class="tier-card-feature">Unlimited scans</div>
-            <div class="tier-card-feature">Save favorites</div>
-            <div class="tier-card-feature">All diet options</div>
-            <button class="tier-card-btn" onclick="openAuthModal('signup')">Get started</button>
-          </div>
-          <div class="tier-card">
-            <div class="tier-card-name">Premium</div>
-            <div class="tier-card-price">$10</div>
-            <div class="tier-card-feature">Everything in Basic</div>
-            <div class="tier-card-feature">Meal planner + budget</div>
-            <div class="tier-card-feature">Grocery lists</div>
-            <button class="tier-card-btn" onclick="openAuthModal('signup')">Get started</button>
-          </div>
+          <div class="tier-card"><div class="tier-card-name">Free</div><div class="tier-card-price">$0</div><div class="tier-card-feature">5 photo scans</div><div class="tier-card-feature">per month</div><div class="tier-card-feature">Save favorites</div><button class="tier-card-btn" onclick="openAuthModal('signup')">Sign up</button></div>
+          <div class="tier-card featured"><div class="tier-card-name">Basic</div><div class="tier-card-price">$5</div><div class="tier-card-feature">Unlimited scans</div><div class="tier-card-feature">Save favorites</div><div class="tier-card-feature">All diet options</div><button class="tier-card-btn" onclick="openAuthModal('signup')">Get started</button></div>
+          <div class="tier-card"><div class="tier-card-name">Premium</div><div class="tier-card-price">$10</div><div class="tier-card-feature">Everything in Basic</div><div class="tier-card-feature">Meal planner + budget</div><div class="tier-card-feature">Grocery lists</div><button class="tier-card-btn" onclick="openAuthModal('signup')">Get started</button></div>
         </div>
       </div>
     </div>
@@ -484,30 +556,9 @@
       <div class="card">
         <div class="section-label">Choose your plan</div>
         <div class="tier-cards">
-          <div class="tier-card">
-            <div class="tier-card-name">Free</div>
-            <div class="tier-card-price">$0</div>
-            <div class="tier-card-feature">5 photo scans</div>
-            <div class="tier-card-feature">per month</div>
-            <div class="tier-card-feature">Save favorites</div>
-            <button class="tier-card-btn current" id="btn-free">Current</button>
-          </div>
-          <div class="tier-card featured">
-            <div class="tier-card-name">Basic</div>
-            <div class="tier-card-price">$5</div>
-            <div class="tier-card-feature">Unlimited scans</div>
-            <div class="tier-card-feature">Save favorites</div>
-            <div class="tier-card-feature">All diet options</div>
-            <button class="tier-card-btn" id="btn-basic" onclick="subscribe('basic')">Upgrade</button>
-          </div>
-          <div class="tier-card">
-            <div class="tier-card-name">Premium</div>
-            <div class="tier-card-price">$10</div>
-            <div class="tier-card-feature">Everything in Basic</div>
-            <div class="tier-card-feature">Meal planner + budget</div>
-            <div class="tier-card-feature">Grocery lists</div>
-            <button class="tier-card-btn" id="btn-premium" onclick="subscribe('premium')">Upgrade</button>
-          </div>
+          <div class="tier-card"><div class="tier-card-name">Free</div><div class="tier-card-price">$0</div><div class="tier-card-feature">5 photo scans</div><div class="tier-card-feature">per month</div><div class="tier-card-feature">Save favorites</div><button class="tier-card-btn current" id="btn-free">Current</button></div>
+          <div class="tier-card featured"><div class="tier-card-name">Basic</div><div class="tier-card-price">$5</div><div class="tier-card-feature">Unlimited scans</div><div class="tier-card-feature">Save favorites</div><div class="tier-card-feature">All diet options</div><button class="tier-card-btn" id="btn-basic" onclick="subscribe('basic')">Upgrade</button></div>
+          <div class="tier-card"><div class="tier-card-name">Premium</div><div class="tier-card-price">$10</div><div class="tier-card-feature">Everything in Basic</div><div class="tier-card-feature">Meal planner + budget</div><div class="tier-card-feature">Grocery lists</div><button class="tier-card-btn" id="btn-premium" onclick="subscribe('premium')">Upgrade</button></div>
         </div>
       </div>
     </div>
@@ -515,16 +566,10 @@
 </div>
 
 <!-- Chat Widget -->
-<button class="chat-fab" onclick="toggleChat()" id="chat-fab">
-  💬
-  <span class="chat-badge" id="chat-badge">1</span>
-</button>
+<button class="chat-fab" onclick="toggleChat()" id="chat-fab">💬<span class="chat-badge" id="chat-badge">1</span></button>
 <div class="chat-window" id="chat-window">
   <div class="chat-header">
-    <div>
-      <div class="chat-header-title">🍽️ Cooking Assistant</div>
-      <div class="chat-header-sub">Ask me anything about cooking!</div>
-    </div>
+    <div><div class="chat-header-title">🍽️ Cooking Assistant</div><div class="chat-header-sub">Ask me anything about cooking!</div></div>
     <button class="chat-close" onclick="toggleChat()">×</button>
   </div>
   <div class="chat-messages" id="chat-messages">
@@ -546,10 +591,7 @@
   <div class="share-box">
     <div class="share-title">🔗 Share this recipe</div>
     <div class="share-sub">Anyone with this link can view the full recipe — no account needed!</div>
-    <div class="share-link-box">
-      <div class="share-link-text" id="share-link-text"></div>
-      <button class="copy-btn" id="copy-btn" onclick="copyShareLink()">Copy</button>
-    </div>
+    <div class="share-link-box"><div class="share-link-text" id="share-link-text"></div><button class="copy-btn" id="copy-btn" onclick="copyShareLink()">Copy</button></div>
     <button class="share-close" onclick="closeShareModal()">Close</button>
   </div>
 </div>
@@ -558,15 +600,10 @@
 <div class="recipe-modal" id="recipe-modal">
   <div class="recipe-modal-box">
     <div class="recipe-modal-header">
-      <div>
-        <div style="font-size:18px;font-weight:600;" id="modal-recipe-title">Loading...</div>
-        <div style="font-size:13px;color:#888;margin-top:2px;" id="modal-recipe-meta"></div>
-      </div>
+      <div><div style="font-size:18px;font-weight:600;" id="modal-recipe-title">Loading...</div><div style="font-size:13px;color:#888;margin-top:2px;" id="modal-recipe-meta"></div></div>
       <button class="recipe-modal-close" onclick="closeRecipeModal()">×</button>
     </div>
-    <div id="modal-recipe-body">
-      <div style="text-align:center;padding:2rem;color:#888;">Fetching recipe...</div>
-    </div>
+    <div id="modal-recipe-body"><div style="text-align:center;padding:2rem;color:#888;">Fetching recipe...</div></div>
   </div>
 </div>
 
@@ -635,14 +672,102 @@
     setTimeout(() => { document.getElementById('chat-badge').classList.add('visible'); }, 3000);
   }
 
+  // ── Cookbook functions ────────────────────────────────────────────────────
+  async function loadCookbookPage() {
+    try {
+      const res = await fetch('/ratings/top', { credentials: 'include' });
+      const data = await res.json();
+      if (data.top && data.top.length > 0) {
+        const section = document.getElementById('top-rated-section');
+        const list = document.getElementById('top-rated-list');
+        section.style.display = 'block';
+        list.innerHTML = '';
+        data.top.forEach((recipe, i) => {
+          const medals = ['🥇','🥈','🥉'];
+          const div = document.createElement('div');
+          div.className = 'top-rated-card';
+          div.innerHTML = `
+            <div class="top-rated-rank">${medals[i] || (i+1)}</div>
+            <div class="top-rated-name">${recipe.title}</div>
+            <div style="text-align:right;">
+              <div class="top-rated-stars">${recipe.average}★</div>
+              <div class="top-rated-count">${recipe.count} rating${recipe.count !== 1 ? 's' : ''}</div>
+            </div>`;
+          div.onclick = () => cookbookRecipeByName(recipe.title);
+          list.appendChild(div);
+        });
+      }
+    } catch (err) { console.log('Could not load top ratings'); }
+  }
+
+  async function cookbookRecipe(card, recipeName) {
+    card.classList.add('loading');
+    try {
+      const response = await fetch('/generate-recipe', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+        body: JSON.stringify({ ingredients: ['common pantry staples'], dietary_restrictions: [], meal_type: '', recipe_name: recipeName, cook_time: '' })
+      });
+      const data = await response.json();
+      card.classList.remove('loading');
+      if (data.recipe) {
+        const r = parseRecipe(data.recipe);
+        currentRecipe = { ...r, meal_type: '', cook_time: '' };
+        showPage('generate', document.getElementById('nav-generate'));
+        document.getElementById('save-btn').textContent = currentUser ? 'Save recipe' : 'Sign up to save';
+        document.getElementById('save-btn').classList.remove('saved');
+        document.getElementById('recipe-title').innerHTML = r.title || recipeName;
+        document.getElementById('recipe-meta').textContent = [r.time, r.servings + ' servings'].filter(Boolean).join(' · ');
+        document.getElementById('recipe-body').innerHTML = buildRecipeHTML(r);
+        initServingAdjuster(r);
+        document.getElementById('recipe-list-container').innerHTML = '';
+        document.getElementById('recipe-card').classList.add('visible');
+        if (r.title) { loadRating(r.title); addToHistory(currentRecipe); }
+        updateChatSuggestions();
+        window.scrollTo(0, 0);
+      }
+    } catch (err) {
+      card.classList.remove('loading');
+      alert('Could not generate recipe. Try again!');
+    }
+  }
+
+  async function cookbookRecipeByName(recipeName) {
+    showPage('generate', document.getElementById('nav-generate'));
+    document.getElementById('loading').textContent = 'Generating ' + recipeName + '...';
+    document.getElementById('loading').style.display = 'block';
+    try {
+      const response = await fetch('/generate-recipe', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+        body: JSON.stringify({ ingredients: ['common pantry staples'], dietary_restrictions: [], meal_type: '', recipe_name: recipeName, cook_time: '' })
+      });
+      const data = await response.json();
+      document.getElementById('loading').style.display = 'none';
+      if (data.recipe) {
+        const r = parseRecipe(data.recipe);
+        currentRecipe = { ...r, meal_type: '', cook_time: '' };
+        document.getElementById('save-btn').textContent = currentUser ? 'Save recipe' : 'Sign up to save';
+        document.getElementById('save-btn').classList.remove('saved');
+        document.getElementById('recipe-title').innerHTML = r.title || recipeName;
+        document.getElementById('recipe-meta').textContent = [r.time, r.servings + ' servings'].filter(Boolean).join(' · ');
+        document.getElementById('recipe-body').innerHTML = buildRecipeHTML(r);
+        initServingAdjuster(r);
+        document.getElementById('recipe-list-container').innerHTML = '';
+        document.getElementById('recipe-card').classList.add('visible');
+        if (r.title) { loadRating(r.title); addToHistory(currentRecipe); }
+        updateChatSuggestions();
+        window.scrollTo(0, 0);
+      }
+    } catch (err) {
+      document.getElementById('loading').style.display = 'none';
+      alert('Could not generate recipe. Try again!');
+    }
+  }
+
   // ── History functions ─────────────────────────────────────────────────────
   async function addToHistory(recipe) {
     if (!currentUser || !recipe || !recipe.title) return;
     try {
-      await fetch('/history', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
-        body: JSON.stringify(recipe)
-      });
+      await fetch('/history', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify(recipe) });
     } catch (err) { console.log('History error:', err); }
   }
 
@@ -659,19 +784,13 @@
       if (!data.history || data.history.length === 0) {
         container.innerHTML = `<div class="empty-state"><div class="empty-icon">📖</div><div>No recipe history yet</div><div style="font-size:13px;margin-top:4px;">Recipes you view will appear here automatically</div></div>`;
       } else {
-        container.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-          <div style="font-size:13px;color:#888;">${data.history.length} recipe${data.history.length !== 1 ? 's' : ''} viewed</div>
-          <button onclick="clearHistory()" style="background:none;border:none;color:#c0392b;font-size:13px;cursor:pointer;">Clear history</button>
-        </div>`;
+        container.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;"><div style="font-size:13px;color:#888;">${data.history.length} recipe${data.history.length !== 1 ? 's' : ''} viewed</div><button onclick="clearHistory()" style="background:none;border:none;color:#c0392b;font-size:13px;cursor:pointer;">Clear history</button></div>`;
         data.history.forEach(recipe => {
           const div = document.createElement('div');
           div.className = 'history-card';
           div.innerHTML = `
             <div class="history-header">
-              <div>
-                <div class="history-name">${recipe.title || 'Recipe'}</div>
-                <div class="history-date">Viewed ${recipe.viewed_at || ''} · ${[recipe.time, recipe.meal_type].filter(Boolean).join(' · ')}</div>
-              </div>
+              <div><div class="history-name">${recipe.title || 'Recipe'}</div><div class="history-date">Viewed ${recipe.viewed_at || ''} · ${[recipe.time, recipe.meal_type].filter(Boolean).join(' · ')}</div></div>
               <span style="font-size:20px;">🕐</span>
             </div>
             ${recipe.calories ? `<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;">
@@ -706,50 +825,34 @@
     document.getElementById('save-btn').textContent = currentUser ? 'Save recipe' : 'Sign up to save';
     document.getElementById('save-btn').classList.remove('saved');
     document.getElementById('recipe-card').classList.add('visible');
-    if (recipe.title) loadRating(recipe.title);
+    if (recipe.title) { loadRating(recipe.title); }
     updateChatSuggestions();
     window.scrollTo(0, 0);
   }
 
   // ── Rating functions ──────────────────────────────────────────────────────
-  function hoverStars(n) {
-    document.querySelectorAll('.star').forEach((s, i) => { s.style.color = i < n ? '#F5A623' : '#ddd'; });
-  }
-
-  function resetStars() {
-    document.querySelectorAll('.star').forEach((s, i) => { s.style.color = i < currentUserRating ? '#F5A623' : '#ddd'; });
-  }
+  function hoverStars(n) { document.querySelectorAll('.star').forEach((s, i) => { s.style.color = i < n ? '#F5A623' : '#ddd'; }); }
+  function resetStars() { document.querySelectorAll('.star').forEach((s, i) => { s.style.color = i < currentUserRating ? '#F5A623' : '#ddd'; }); }
 
   async function rateRecipe(rating) {
     if (!currentRecipe || !currentRecipe.title) return;
-    currentUserRating = rating;
-    resetStars();
+    currentUserRating = rating; resetStars();
     try {
-      const res = await fetch('/rate-recipe', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
-        body: JSON.stringify({ recipe_name: currentRecipe.title, rating })
-      });
+      const res = await fetch('/rate-recipe', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ recipe_name: currentRecipe.title, rating }) });
       const data = await res.json();
-      if (data.average !== undefined) {
-        document.getElementById('rating-info').textContent = `${data.average}★ (${data.count} rating${data.count !== 1 ? 's' : ''})`;
-      }
+      if (data.average !== undefined) document.getElementById('rating-info').textContent = `${data.average}★ (${data.count} rating${data.count !== 1 ? 's' : ''})`;
     } catch (err) { console.log('Rating error:', err); }
   }
 
   async function loadRating(recipeName) {
-    currentUserRating = 0;
-    resetStars();
+    currentUserRating = 0; resetStars();
     document.getElementById('rating-info').textContent = '';
     document.getElementById('rating-bar').style.display = 'flex';
     try {
       const res = await fetch('/ratings/' + encodeURIComponent(recipeName), { credentials: 'include' });
       const data = await res.json();
       if (data.user_rating) { currentUserRating = data.user_rating; resetStars(); }
-      if (data.count > 0) {
-        document.getElementById('rating-info').textContent = `${data.average}★ (${data.count} rating${data.count !== 1 ? 's' : ''})`;
-      } else {
-        document.getElementById('rating-info').textContent = 'No ratings yet';
-      }
+      document.getElementById('rating-info').textContent = data.count > 0 ? `${data.average}★ (${data.count} rating${data.count !== 1 ? 's' : ''})` : 'No ratings yet';
     } catch (err) { document.getElementById('rating-info').textContent = ''; }
   }
 
@@ -758,25 +861,16 @@
     chatOpen = !chatOpen;
     document.getElementById('chat-window').classList.toggle('open', chatOpen);
     document.getElementById('chat-fab').textContent = chatOpen ? '×' : '💬';
-    if (chatOpen) {
-      document.getElementById('chat-badge').classList.remove('visible');
-      document.getElementById('chat-input').focus();
-      updateChatSuggestions();
-    } else { document.getElementById('chat-fab').textContent = '💬'; }
+    if (chatOpen) { document.getElementById('chat-badge').classList.remove('visible'); document.getElementById('chat-input').focus(); updateChatSuggestions(); }
+    else { document.getElementById('chat-fab').textContent = '💬'; }
   }
 
   function updateChatSuggestions() {
     const el = document.getElementById('chat-suggestions');
     if (currentRecipe && currentRecipe.title) {
-      el.innerHTML = `
-        <button class="chat-suggestion" onclick="sendSuggestion(this)">Substitute an ingredient?</button>
-        <button class="chat-suggestion" onclick="sendSuggestion(this)">Make it healthier?</button>
-        <button class="chat-suggestion" onclick="sendSuggestion(this)">How do I store leftovers?</button>`;
+      el.innerHTML = `<button class="chat-suggestion" onclick="sendSuggestion(this)">Substitute an ingredient?</button><button class="chat-suggestion" onclick="sendSuggestion(this)">Make it healthier?</button><button class="chat-suggestion" onclick="sendSuggestion(this)">How do I store leftovers?</button>`;
     } else {
-      el.innerHTML = `
-        <button class="chat-suggestion" onclick="sendSuggestion(this)">Substitute heavy cream?</button>
-        <button class="chat-suggestion" onclick="sendSuggestion(this)">Make it vegan?</button>
-        <button class="chat-suggestion" onclick="sendSuggestion(this)">How do I know it's done?</button>`;
+      el.innerHTML = `<button class="chat-suggestion" onclick="sendSuggestion(this)">Substitute heavy cream?</button><button class="chat-suggestion" onclick="sendSuggestion(this)">Make it vegan?</button><button class="chat-suggestion" onclick="sendSuggestion(this)">How do I know it's done?</button>`;
     }
   }
 
@@ -803,14 +897,9 @@
     const typingDiv = appendChatMsg('bot typing', 'Thinking...');
     document.getElementById('chat-send').disabled = true;
     let recipeContext = null;
-    if (currentRecipe && currentRecipe.title) {
-      recipeContext = `Recipe: ${currentRecipe.title}\nIngredients: ${(currentRecipe.ingList || []).join(', ')}\nInstructions: ${(currentRecipe.instructions || []).join(' ')}`;
-    }
+    if (currentRecipe && currentRecipe.title) recipeContext = `Recipe: ${currentRecipe.title}\nIngredients: ${(currentRecipe.ingList || []).join(', ')}\nInstructions: ${(currentRecipe.instructions || []).join(' ')}`;
     try {
-      const res = await fetch('/chat', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
-        body: JSON.stringify({ message, recipe_context: recipeContext, history: chatHistory.slice(-6) })
-      });
+      const res = await fetch('/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ message, recipe_context: recipeContext, history: chatHistory.slice(-6) }) });
       const data = await res.json();
       typingDiv.remove();
       if (data.reply) { appendChatMsg('bot', data.reply); chatHistory.push({ role: 'assistant', content: data.reply }); }
@@ -821,8 +910,7 @@
   }
 
   function updateUserBar() {
-    const bar = document.getElementById('user-bar');
-    bar.style.display = 'flex';
+    document.getElementById('user-bar').style.display = 'flex';
     if (currentUser) {
       document.getElementById('user-bar-name').textContent = currentUser.name;
       document.getElementById('user-bar-scans').textContent = currentUser.tier === 'free' ? (5 - currentUser.scans_used) + ' photo scans left this month' : 'Unlimited photo scans';
@@ -862,11 +950,8 @@
   function updatePlannerPage() {
     const locked = document.getElementById('planner-locked');
     const content = document.getElementById('planner-content');
-    if (!currentUser || currentUser.tier !== 'premium') {
-      locked.style.display = 'block'; content.style.display = 'none';
-    } else {
-      locked.style.display = 'none'; content.style.display = 'block';
-    }
+    if (!currentUser || currentUser.tier !== 'premium') { locked.style.display = 'block'; content.style.display = 'none'; }
+    else { locked.style.display = 'none'; content.style.display = 'block'; }
   }
 
   function switchPlanTab(tab, btn) {
@@ -923,8 +1008,7 @@
   function closeShareModal() { document.getElementById('share-modal').classList.remove('visible'); }
 
   function copyShareLink() {
-    const link = document.getElementById('share-link-text').textContent;
-    navigator.clipboard.writeText(link).then(() => {
+    navigator.clipboard.writeText(document.getElementById('share-link-text').textContent).then(() => {
       const btn = document.getElementById('copy-btn');
       btn.textContent = 'Copied!'; btn.classList.add('copied');
       setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 2000);
@@ -940,23 +1024,7 @@
     const ingHTML = (r.ingList || []).map(i => `<li>${i}</li>`).join('');
     const instrHTML = (r.instructions || []).map((i, n) => `<li><b>${n+1}.</b> ${i}</li>`).join('');
     const macroHTML = r.calories ? `<div class="mrow"><span class="mb">🔥 ${r.calories} cal</span><span class="mb">💪 ${r.protein}g protein</span><span class="mb">🌾 ${r.carbs}g carbs</span><span class="mb">🥑 ${r.fat}g fat</span>${r.fiber?`<span class="mb">🌿 ${r.fiber}g fiber</span>`:''}</div>` : '';
-    win.document.write(`<!DOCTYPE html><html><head><title>${title}</title><style>
-      *{box-sizing:border-box;margin:0;padding:0;}@page{size:landscape;margin:0.3cm;}
-      body{font-family:-apple-system,sans-serif;font-size:9.5px;color:#1a1a1a;padding:0.2cm;}
-      h1{font-size:13px;margin-bottom:1px;}.meta{color:#888;font-size:9px;margin-bottom:3px;padding-bottom:2px;border-bottom:1px solid #eee;}
-      .mrow{display:flex;flex-wrap:wrap;gap:2px;margin-bottom:4px;}.mb{background:#f5f5f0;border-radius:3px;padding:1px 5px;font-size:9px;}
-      .two{display:grid;grid-template-columns:1fr 1.8fr;gap:10px;}
-      h3{font-size:8px;text-transform:uppercase;letter-spacing:0.4px;color:#888;margin-bottom:2px;border-bottom:1px solid #eee;padding-bottom:1px;}
-      ul{padding-left:10px;}li{margin-bottom:1px;line-height:1.2;font-size:9.5px;}
-      ol{padding-left:0;list-style:none;}ol li{margin-bottom:1px;line-height:1.2;font-size:9.5px;}ol li b{color:#1D9E75;}
-      .tip{background:#E1F5EE;border-radius:3px;padding:3px 6px;margin-top:4px;font-size:9px;color:#0F6E56;}
-      .brand{text-align:center;margin-top:4px;font-size:8px;color:#bbb;border-top:1px solid #eee;padding-top:2px;}.brand b{color:#1D9E75;}
-    </style></head><body>
-    <h1>${title}</h1><div class="meta">${meta}</div>${macroHTML}
-    <div class="two"><div><h3>Ingredients</h3><ul>${ingHTML}</ul></div><div><h3>Instructions</h3><ol>${instrHTML}</ol></div></div>
-    ${r.tip?`<div class="tip"><b>Chef Tip:</b> ${r.tip}</div>`:''}
-    <div class="brand">Generated by <b>Scan&Savor</b> — scanandsavor.onrender.com</div>
-    <script>window.onload=function(){window.print();}<\/script></body></html>`);
+    win.document.write(`<!DOCTYPE html><html><head><title>${title}</title><style>*{box-sizing:border-box;margin:0;padding:0;}@page{size:landscape;margin:0.3cm;}body{font-family:-apple-system,sans-serif;font-size:9.5px;color:#1a1a1a;padding:0.2cm;}h1{font-size:13px;margin-bottom:1px;}.meta{color:#888;font-size:9px;margin-bottom:3px;padding-bottom:2px;border-bottom:1px solid #eee;}.mrow{display:flex;flex-wrap:wrap;gap:2px;margin-bottom:4px;}.mb{background:#f5f5f0;border-radius:3px;padding:1px 5px;font-size:9px;}.two{display:grid;grid-template-columns:1fr 1.8fr;gap:10px;}h3{font-size:8px;text-transform:uppercase;letter-spacing:0.4px;color:#888;margin-bottom:2px;border-bottom:1px solid #eee;padding-bottom:1px;}ul{padding-left:10px;}li{margin-bottom:1px;line-height:1.2;font-size:9.5px;}ol{padding-left:0;list-style:none;}ol li{margin-bottom:1px;line-height:1.2;font-size:9.5px;}ol li b{color:#1D9E75;}.tip{background:#E1F5EE;border-radius:3px;padding:3px 6px;margin-top:4px;font-size:9px;color:#0F6E56;}.brand{text-align:center;margin-top:4px;font-size:8px;color:#bbb;border-top:1px solid #eee;padding-top:2px;}.brand b{color:#1D9E75;}</style></head><body><h1>${title}</h1><div class="meta">${meta}</div>${macroHTML}<div class="two"><div><h3>Ingredients</h3><ul>${ingHTML}</ul></div><div><h3>Instructions</h3><ol>${instrHTML}</ol></div></div>${r.tip?`<div class="tip"><b>Chef Tip:</b> ${r.tip}</div>`:''}<div class="brand">Generated by <b>Scan&Savor</b> — scanandsavor.onrender.com</div><script>window.onload=function(){window.print();}<\/script></body></html>`);
     win.document.close();
   }
 
@@ -976,9 +1044,7 @@
     const fractions = [[1/4,'1/4'],[1/3,'1/3'],[1/2,'1/2'],[2/3,'2/3'],[3/4,'3/4']];
     const whole = Math.floor(num);
     const decimal = num - whole;
-    for (const [val, str] of fractions) {
-      if (Math.abs(decimal - val) < 0.05) return whole > 0 ? whole + ' ' + str : str;
-    }
+    for (const [val, str] of fractions) { if (Math.abs(decimal - val) < 0.05) return whole > 0 ? whole + ' ' + str : str; }
     return num % 1 === 0 ? String(num) : num.toFixed(1);
   }
 
@@ -1006,10 +1072,7 @@
     const macroKeys = ['calories','protein','carbs','fat','fiber','sugar','sodium','vitamin_c','calcium','iron'];
     macroKeys.forEach((key, i) => {
       const el = document.getElementById(macroIds[i]);
-      if (el && currentRecipe[key]) {
-        const base = parseFloat(currentRecipe[key]);
-        if (!isNaN(base)) el.textContent = formatAmount(base * ratio);
-      }
+      if (el && currentRecipe[key]) { const base = parseFloat(currentRecipe[key]); if (!isNaN(base)) el.textContent = formatAmount(base * ratio); }
     });
   }
 
@@ -1026,10 +1089,7 @@
     const diets = [...document.querySelectorAll('.diet-chip.active')].map(d => d.textContent);
     const recipeIngredients = ingredients.length > 0 ? ingredients : ['common pantry staples', 'basic ingredients'];
     try {
-      const response = await fetch('/generate-recipe', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
-        body: JSON.stringify({ ingredients: recipeIngredients, dietary_restrictions: diets, meal_type: '', recipe_name: recipeName, cook_time: '' })
-      });
+      const response = await fetch('/generate-recipe', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ ingredients: recipeIngredients, dietary_restrictions: diets, meal_type: '', recipe_name: recipeName, cook_time: '' }) });
       if (!response.ok) { document.getElementById('modal-recipe-body').innerHTML = '<div style="text-align:center;padding:1rem;color:#c0392b;">Server error. Try again.</div>'; return; }
       const data = await response.json();
       if (data.recipe) {
@@ -1113,6 +1173,7 @@
     if (page === 'favorites') loadFavoritesPage();
     if (page === 'planner') updatePlannerPage();
     if (page === 'history') loadHistoryPage();
+    if (page === 'cookbook') loadCookbookPage();
   }
 
   function addIngredient() {
@@ -1178,10 +1239,7 @@
     document.getElementById('error').style.display = 'none';
     document.getElementById('gen-btn').disabled = true;
     try {
-      const response = await fetch('/generate-recipe', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
-        body: JSON.stringify({ ingredients: searchIngredients, dietary_restrictions: diets, meal_type: '', recipe_name: recipeName, cook_time: '' })
-      });
+      const response = await fetch('/generate-recipe', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ ingredients: searchIngredients, dietary_restrictions: diets, meal_type: '', recipe_name: recipeName, cook_time: '' }) });
       const data = await response.json();
       if (data.error) { showError(data.error); }
       else {
@@ -1299,10 +1357,7 @@
     document.getElementById('recipe-card').classList.remove('visible');
     document.getElementById('serving-adjuster').style.display = 'none';
     document.getElementById('rating-bar').style.display = 'none';
-    if (savedRecipeListHTML) {
-      document.getElementById('recipe-list-container').innerHTML = savedRecipeListHTML;
-      reattachRecipeListeners();
-    }
+    if (savedRecipeListHTML) { document.getElementById('recipe-list-container').innerHTML = savedRecipeListHTML; reattachRecipeListeners(); }
     window.scrollTo(0, 0);
   }
 
@@ -1622,10 +1677,7 @@
   }
 
   function viewFavorite(fav) {
-    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-    document.getElementById('page-generate').classList.add('active');
-    document.getElementById('nav-generate').classList.add('active');
+    showPage('generate', document.getElementById('nav-generate'));
     currentRecipe = fav;
     const mealBadge = fav.meal_type ? `<span style="background:#E1F5EE;color:#0F6E56;border-radius:99px;padding:2px 10px;font-size:12px;font-weight:600;margin-left:8px;text-transform:capitalize">${fav.meal_type}</span>` : '';
     const timeBadge = fav.cook_time ? `<span style="background:#E6F1FB;color:#185FA5;border-radius:99px;padding:2px 10px;font-size:12px;font-weight:600;margin-left:6px;">⚡ ${fav.cook_time}</span>` : '';
