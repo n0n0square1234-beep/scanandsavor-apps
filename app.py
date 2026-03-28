@@ -11,7 +11,7 @@ from dotenv import load_dotenv
 import stripe
 
 from models import db, User
-from recipe_generator import generate_recipe_list, generate_recipe, analyze_image_ingredients, generate_meal_plan_ai, generate_grocery_list_ai
+from recipe_generator import generate_recipe_list, generate_recipe, analyze_image, generate_meal_plan, generate_grocery_list
 from favorites import load_favorites, save_favorite, remove_favorite
 from meal_plans import load_meal_plans, save_meal_plan, remove_meal_plan
 
@@ -139,7 +139,7 @@ def generate_recipe_route():
         return jsonify({'error': str(e)}), 500
 
 @app.route('/analyze-image', methods=['POST'])
-def analyze_image():
+def analyze_image_route():
     if not current_user.is_authenticated:
         return jsonify({'error': 'signup_required', 'message': 'Sign up free to scan your fridge and pantry with AI!'}), 401
     if current_user.tier == 'free':
@@ -156,7 +156,7 @@ def analyze_image():
     image_data = base64.b64encode(image_file.read()).decode('utf-8')
     media_type = image_file.content_type or 'image/jpeg'
     try:
-        ingredients = analyze_image_ingredients(image_data, media_type)
+        ingredients = analyze_image(image_data, media_type)
         current_user.use_scan()
         return jsonify({'ingredients': ingredients, 'scans_used': current_user.scans_used})
     except Exception as e:
@@ -165,14 +165,14 @@ def analyze_image():
 # ── Chat route ────────────────────────────────────────────────────────────────
 @app.route('/chat', methods=['POST'])
 def chat():
-    import anthropic
+    from anthropic import Anthropic
     data = request.json
     message = data.get('message', '')
     recipe_context = data.get('recipe_context', None)
     history = data.get('history', [])
     if not message:
         return jsonify({'error': 'No message provided'}), 400
-    client = anthropic.Anthropic(api_key=os.environ.get('ANTHROPIC_API_KEY'))
+    client = Anthropic(api_key=os.environ.get('ANTHROPIC_API_KEY'))
     system_prompt = """You are a friendly and knowledgeable cooking assistant for Scan&Savor, an AI recipe app.
 You help users with cooking questions, ingredient substitutions, technique tips, dietary adjustments, and anything food related.
 Keep answers concise, practical and friendly. Use a warm conversational tone.
@@ -228,7 +228,7 @@ def meal_plan():
     days = data.get('days', 7)
     budget = data.get('budget', None)
     try:
-        result = generate_meal_plan_ai(ingredients, dietary_restrictions, days, budget)
+        result = generate_meal_plan(ingredients, dietary_restrictions, days, budget)
         return jsonify({'meal_plan': result})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -241,7 +241,7 @@ def grocery_list():
     selected_meals = data.get('selected_meals', [])
     dietary_restrictions = data.get('dietary_restrictions', [])
     try:
-        result = generate_grocery_list_ai(selected_meals, dietary_restrictions)
+        result = generate_grocery_list(selected_meals, dietary_restrictions)
         return jsonify({'grocery_list': result})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
