@@ -3,15 +3,15 @@ import json
 import base64
 import uuid
 from datetime import datetime
-from flask import Flask, request, jsonify, session
+from flask import Flask, request, jsonify
 from flask_cors import CORS
-from flask_login import LoginManager, login_user, logout_user, login_required, current_user
+from flask_login import LoginManager, login_user, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from dotenv import load_dotenv
 import stripe
 
 from models import db, User
-from recipe_generator import generate_recipe_list, generate_full_recipe, analyze_image_ingredients, generate_meal_plan_ai, generate_grocery_list_ai
+from recipe_generator import generate_recipe_list, generate_recipe, analyze_image, generate_meal_plan, generate_grocery_list
 from favorites import load_favorites, save_favorite, remove_favorite
 from meal_plans import load_meal_plans, save_meal_plan, remove_meal_plan
 
@@ -125,7 +125,7 @@ def recipe_list():
         return jsonify({'error': str(e)}), 500
 
 @app.route('/generate-recipe', methods=['POST'])
-def generate_recipe():
+def generate_recipe_route():
     data = request.json
     ingredients = data.get('ingredients', [])
     dietary_restrictions = data.get('dietary_restrictions', [])
@@ -133,13 +133,13 @@ def generate_recipe():
     recipe_name = data.get('recipe_name', '')
     cook_time = data.get('cook_time', '')
     try:
-        result = generate_full_recipe(ingredients, dietary_restrictions, meal_type, recipe_name, cook_time)
+        result = generate_recipe(ingredients, dietary_restrictions, meal_type, recipe_name, cook_time)
         return jsonify({'recipe': result})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
 @app.route('/analyze-image', methods=['POST'])
-def analyze_image():
+def analyze_image_route():
     if not current_user.is_authenticated:
         return jsonify({'error': 'signup_required', 'message': 'Sign up free to scan your fridge and pantry with AI!'}), 401
     if current_user.tier == 'free':
@@ -156,7 +156,7 @@ def analyze_image():
     image_data = base64.b64encode(image_file.read()).decode('utf-8')
     media_type = image_file.content_type or 'image/jpeg'
     try:
-        ingredients = analyze_image_ingredients(image_data, media_type)
+        ingredients = analyze_image(image_data, media_type)
         current_user.use_scan()
         return jsonify({'ingredients': ingredients, 'scans_used': current_user.scans_used})
     except Exception as e:
@@ -196,7 +196,7 @@ def meal_plan():
     days = data.get('days', 7)
     budget = data.get('budget', None)
     try:
-        result = generate_meal_plan_ai(ingredients, dietary_restrictions, days, budget)
+        result = generate_meal_plan(ingredients, dietary_restrictions, days, budget)
         return jsonify({'meal_plan': result})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -209,7 +209,7 @@ def grocery_list():
     selected_meals = data.get('selected_meals', [])
     dietary_restrictions = data.get('dietary_restrictions', [])
     try:
-        result = generate_grocery_list_ai(selected_meals, dietary_restrictions)
+        result = generate_grocery_list(selected_meals, dietary_restrictions)
         return jsonify({'grocery_list': result})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
