@@ -123,6 +123,68 @@ def clear_user_history(user_id):
     with open(HISTORY_FILE, "w", encoding="utf-8") as f:
         json.dump(history, f, ensure_ascii=False, indent=2)
 
+# ── Calorie tracker helpers ───────────────────────────────────────────────────
+CALORIE_LOG_FILE = "calorie_log.json"
+CALORIE_GOALS_FILE = "calorie_goals.json"
+
+def load_calorie_log():
+    if not os.path.exists(CALORIE_LOG_FILE):
+        return {}
+    with open(CALORIE_LOG_FILE, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+def save_calorie_log_file(data):
+    with open(CALORIE_LOG_FILE, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+
+def load_calorie_goals():
+    if not os.path.exists(CALORIE_GOALS_FILE):
+        return {}
+    with open(CALORIE_GOALS_FILE, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+def save_calorie_goals_file(data):
+    with open(CALORIE_GOALS_FILE, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+
+def get_today_key():
+    return datetime.utcnow().strftime('%Y-%m-%d')
+
+def get_user_today_log(user_id):
+    log = load_calorie_log()
+    key = f"{user_id}_{get_today_key()}"
+    return log.get(key, [])
+
+def add_to_calorie_log(user_id, meal_name, calories):
+    log = load_calorie_log()
+    key = f"{user_id}_{get_today_key()}"
+    if key not in log:
+        log[key] = []
+    log[key].append({
+        'name': meal_name,
+        'calories': int(calories),
+        'time': datetime.utcnow().strftime('%I:%M %p')
+    })
+    save_calorie_log_file(log)
+    return log[key]
+
+def delete_from_calorie_log(user_id, index):
+    log = load_calorie_log()
+    key = f"{user_id}_{get_today_key()}"
+    if key in log and 0 <= index < len(log[key]):
+        log[key].pop(index)
+    save_calorie_log_file(log)
+    return log.get(key, [])
+
+def get_user_calorie_goal(user_id):
+    goals = load_calorie_goals()
+    return goals.get(str(user_id), 2000)
+
+def set_user_calorie_goal(user_id, goal):
+    goals = load_calorie_goals()
+    goals[str(user_id)] = int(goal)
+    save_calorie_goals_file(goals)
+
 # ── Static page ───────────────────────────────────────────────────────────────
 @app.route('/')
 def index():
@@ -223,6 +285,55 @@ def analyze_image_route():
         return jsonify({'ingredients': ingredients, 'scans_used': current_user.scans_used})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+# ── Calorie tracker routes ────────────────────────────────────────────────────
+@app.route('/calorie-goal', methods=['GET'])
+def get_calorie_goal():
+    if not current_user.is_authenticated:
+        return jsonify({'error': 'login_required'}), 401
+    goal = get_user_calorie_goal(current_user.id)
+    return jsonify({'goal': goal})
+
+@app.route('/calorie-goal', methods=['POST'])
+def set_calorie_goal():
+    if not current_user.is_authenticated:
+        return jsonify({'error': 'login_required'}), 401
+    data = request.json
+    goal = data.get('goal', 2000)
+    set_user_calorie_goal(current_user.id, goal)
+    return jsonify({'goal': int(goal)})
+
+@app.route('/calorie-log', methods=['GET'])
+def get_calorie_log():
+    if not current_user.is_authenticated:
+        return jsonify({'error': 'login_required'}), 401
+    entries = get_user_today_log(current_user.id)
+    goal = get_user_calorie_goal(current_user.id)
+    total = sum(e['calories'] for e in entries)
+    return jsonify({'entries': entries, 'total': total, 'goal': goal})
+
+@app.route('/calorie-log', methods=['POST'])
+def log_calories():
+    if not current_user.is_authenticated:
+        return jsonify({'error': 'login_required'}), 401
+    data = request.json
+    meal_name = data.get('name', 'Meal')
+    calories = data.get('calories', 0)
+    if not calories or int(calories) <= 0:
+        return jsonify({'error': 'Invalid calories'}), 400
+    entries = add_to_calorie_log(current_user.id, meal_name, calories)
+    goal = get_user_calorie_goal(current_user.id)
+    total = sum(e['calories'] for e in entries)
+    return jsonify({'entries': entries, 'total': total, 'goal': goal})
+
+@app.route('/calorie-log/<int:index>', methods=['DELETE'])
+def delete_calorie_entry(index):
+    if not current_user.is_authenticated:
+        return jsonify({'error': 'login_required'}), 401
+    entries = delete_from_calorie_log(current_user.id, index)
+    goal = get_user_calorie_goal(current_user.id)
+    total = sum(e['calories'] for e in entries)
+    return jsonify({'entries': entries, 'total': total, 'goal': goal})
 
 # ── History routes ────────────────────────────────────────────────────────────
 @app.route('/history', methods=['GET'])
