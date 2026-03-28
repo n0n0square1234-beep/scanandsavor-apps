@@ -115,9 +115,17 @@
     body.dark .calorie-entry-name { color: #eee; }
     .calorie-entry-cal { font-size: 14px; font-weight: 600; color: #F5A623; }
     .calorie-entry-time { font-size: 11px; color: #bbb; }
+    .calorie-total-num { font-size: 24px; font-weight: 700; color: #1a1a1a; }
+    body.dark .calorie-total-num { color: #eee; }
+    .calorie-goal-text { font-size: 13px; color: #888; }
+    body.dark .calorie-goal-text { color: #aaa; }
+    .calorie-remaining { font-size: 12px; color: #888; margin-bottom: 14px; }
+    body.dark .calorie-remaining { color: #aaa; }
+    .calorie-over { color: #c0392b !important; }
     .calorie-mini-banner { background: #FFF8E7; border-radius: 10px; padding: 8px 12px; margin-top: 12px; display: flex; align-items: center; gap: 8px; }
     body.dark .calorie-mini-banner { background: #2a2200; }
     .calorie-mini-text { font-size: 13px; color: #854F0B; flex: 1; }
+    body.dark .calorie-mini-text { color: #F5A623; }
     .cookbook-section-title { font-size: 17px; font-weight: 700; color: #1a1a1a; margin: 16px 0 10px; display: flex; align-items: center; gap: 8px; }
     body.dark .cookbook-section-title { color: #eee; }
     .cookbook-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 8px; }
@@ -475,14 +483,10 @@
   </div>
 
   <!-- History Page -->
-  <div id="page-history" class="page">
-    <div id="history-container"></div>
-  </div>
+  <div id="page-history" class="page"><div id="history-container"></div></div>
 
   <!-- Favorites Page -->
-  <div id="page-favorites" class="page">
-    <div id="favorites-container"></div>
-  </div>
+  <div id="page-favorites" class="page"><div id="favorites-container"></div></div>
 
   <!-- Planner Page -->
   <div id="page-planner" class="page">
@@ -565,12 +569,11 @@
         <button class="logout-btn" onclick="doLogout()">Log out</button>
         <button class="logout-btn" id="cancel-sub-btn" onclick="cancelSubscription()" style="display:none;margin-top:8px;border-color:#c0392b;color:#c0392b;">Cancel subscription</button>
       </div>
-
       <!-- Calorie Tracker -->
       <div class="card">
         <div class="section-label">🔥 Daily Calorie Tracker</div>
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
-          <div style="font-size:13px;color:#555;font-weight:600;white-space:nowrap;">Daily goal:</div>
+          <div style="font-size:13px;color:#888;font-weight:600;white-space:nowrap;">Daily goal:</div>
           <div style="display:flex;align-items:center;border:1px solid #e5e5e5;border-radius:10px;overflow:hidden;flex:1;">
             <input type="number" id="calorie-goal-input" placeholder="e.g. 2000" min="500" max="10000" style="flex:1;padding:8px 12px;border:none;outline:none;font-size:15px;background:white;color:#1a1a1a;" onkeydown="if(event.key==='Enter') saveCalorieGoal()" />
             <span style="padding:8px 10px;background:#f5f5f0;color:#888;font-size:12px;border-left:1px solid #e5e5e5;">cal</span>
@@ -579,16 +582,14 @@
         </div>
         <div id="calorie-progress-section" style="display:none;">
           <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px;">
-            <div style="font-size:24px;font-weight:700;color:#1a1a1a;" id="calorie-total-display">0</div>
-            <div style="font-size:13px;color:#888;" id="calorie-goal-display">/ 2000 cal goal</div>
+            <div class="calorie-total-num" id="calorie-total-display">0</div>
+            <div class="calorie-goal-text" id="calorie-goal-display">/ 2000 cal goal</div>
           </div>
           <div class="calorie-progress-bar">
             <div class="calorie-progress-fill" id="calorie-progress-fill" style="width:0%"></div>
           </div>
-          <div style="font-size:12px;color:#888;margin-bottom:14px;" id="calorie-remaining-text"></div>
+          <div class="calorie-remaining" id="calorie-remaining-text"></div>
         </div>
-
-        <!-- Custom entry form -->
         <div style="background:#f5f5f0;border-radius:12px;padding:12px;margin-bottom:12px;">
           <div style="font-size:12px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Add custom entry</div>
           <div style="display:flex;gap:8px;margin-bottom:8px;">
@@ -597,13 +598,10 @@
           </div>
           <button onclick="addCustomEntry()" style="width:100%;padding:10px;background:#F5A623;color:white;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;">+ Add entry</button>
         </div>
-
-        <!-- Today's log -->
         <div id="calorie-log-list">
           <div style="text-align:center;padding:1rem;color:#888;font-size:14px;">Loading today's log...</div>
         </div>
       </div>
-
       <div class="card">
         <div class="section-label">Choose your plan</div>
         <div class="tier-cards">
@@ -758,8 +756,7 @@
         body: JSON.stringify({ name: currentRecipe.title, calories: currentRecipe.calories })
       });
       const data = await res.json();
-      todayCalories = data.total;
-      calorieGoal = data.goal;
+      todayCalories = data.total; calorieGoal = data.goal;
       btn.textContent = '✓ Logged!'; btn.classList.add('logged');
       updateCalorieMini();
     } catch (err) { btn.textContent = '+ Log calories'; btn.disabled = false; }
@@ -791,13 +788,10 @@
     fill.style.width = pct + '%';
     fill.className = 'calorie-progress-fill' + (total > goal ? ' over' : '');
     const remaining = goal - total;
-    if (remaining > 0) {
-      remainingText.textContent = `${remaining.toLocaleString()} calories remaining today`;
-      remainingText.style.color = '#888';
-    } else {
-      remainingText.textContent = `${Math.abs(remaining).toLocaleString()} calories over goal`;
-      remainingText.style.color = '#c0392b';
-    }
+    remainingText.className = 'calorie-remaining' + (remaining < 0 ? ' calorie-over' : '');
+    remainingText.textContent = remaining > 0
+      ? `${remaining.toLocaleString()} calories remaining today`
+      : `${Math.abs(remaining).toLocaleString()} calories over goal`;
     if (entries.length === 0) {
       logList.innerHTML = '<div style="text-align:center;padding:1rem;color:#888;font-size:14px;">No meals logged today yet</div>';
     } else {
@@ -844,8 +838,7 @@
         body: JSON.stringify({ name, calories })
       });
       const data = await res.json();
-      todayCalories = data.total;
-      calorieGoal = data.goal;
+      todayCalories = data.total; calorieGoal = data.goal;
       nameInput.value = ''; calInput.value = '';
       renderCalorieLog(data.entries, data.total, data.goal);
       updateCalorieMini();
@@ -856,14 +849,13 @@
     try {
       const res = await fetch('/calorie-log/' + index, { method: 'DELETE', credentials: 'include' });
       const data = await res.json();
-      todayCalories = data.total;
-      calorieGoal = data.goal;
+      todayCalories = data.total; calorieGoal = data.goal;
       renderCalorieLog(data.entries, data.total, data.goal);
       updateCalorieMini();
     } catch (err) { alert('Could not delete entry.'); }
   }
 
-  // ── Cookbook functions ────────────────────────────────────────────────────
+  // ── Cookbook ──────────────────────────────────────────────────────────────
   async function loadCookbookPage() {
     try {
       const res = await fetch('/ratings/top', { credentials: 'include' });
@@ -871,19 +863,12 @@
       if (data.top && data.top.length > 0) {
         const section = document.getElementById('top-rated-section');
         const list = document.getElementById('top-rated-list');
-        section.style.display = 'block';
-        list.innerHTML = '';
+        section.style.display = 'block'; list.innerHTML = '';
         data.top.forEach((recipe, i) => {
           const medals = ['🥇','🥈','🥉'];
           const div = document.createElement('div');
           div.className = 'top-rated-card';
-          div.innerHTML = `
-            <div class="top-rated-rank">${medals[i] || (i+1)}</div>
-            <div class="top-rated-name">${recipe.title}</div>
-            <div style="text-align:right;">
-              <div class="top-rated-stars">${recipe.average}★</div>
-              <div class="top-rated-count">${recipe.count} rating${recipe.count !== 1 ? 's' : ''}</div>
-            </div>`;
+          div.innerHTML = `<div class="top-rated-rank">${medals[i] || (i+1)}</div><div class="top-rated-name">${recipe.title}</div><div style="text-align:right;"><div class="top-rated-stars">${recipe.average}★</div><div class="top-rated-count">${recipe.count} rating${recipe.count !== 1 ? 's' : ''}</div></div>`;
           div.onclick = () => cookbookRecipeByName(recipe.title);
           list.appendChild(div);
         });
@@ -894,10 +879,7 @@
   async function cookbookRecipe(card, recipeName) {
     card.classList.add('loading');
     try {
-      const response = await fetch('/generate-recipe', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
-        body: JSON.stringify({ ingredients: ['common pantry staples'], dietary_restrictions: [], meal_type: '', recipe_name: recipeName, cook_time: '' })
-      });
+      const response = await fetch('/generate-recipe', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ ingredients: ['common pantry staples'], dietary_restrictions: [], meal_type: '', recipe_name: recipeName, cook_time: '' }) });
       const data = await response.json();
       card.classList.remove('loading');
       if (data.recipe) {
@@ -916,9 +898,7 @@
         document.getElementById('recipe-list-container').innerHTML = '';
         document.getElementById('recipe-card').classList.add('visible');
         if (r.title) { loadRating(r.title); addToHistory(currentRecipe); }
-        updateChatSuggestions();
-        updateCalorieMini();
-        window.scrollTo(0, 0);
+        updateChatSuggestions(); updateCalorieMini(); window.scrollTo(0, 0);
       }
     } catch (err) { card.classList.remove('loading'); alert('Could not generate recipe. Try again!'); }
   }
@@ -928,10 +908,7 @@
     document.getElementById('loading').textContent = 'Generating ' + recipeName + '...';
     document.getElementById('loading').style.display = 'block';
     try {
-      const response = await fetch('/generate-recipe', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
-        body: JSON.stringify({ ingredients: ['common pantry staples'], dietary_restrictions: [], meal_type: '', recipe_name: recipeName, cook_time: '' })
-      });
+      const response = await fetch('/generate-recipe', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ ingredients: ['common pantry staples'], dietary_restrictions: [], meal_type: '', recipe_name: recipeName, cook_time: '' }) });
       const data = await response.json();
       document.getElementById('loading').style.display = 'none';
       if (data.recipe) {
@@ -949,24 +926,21 @@
         document.getElementById('recipe-list-container').innerHTML = '';
         document.getElementById('recipe-card').classList.add('visible');
         if (r.title) { loadRating(r.title); addToHistory(currentRecipe); }
-        updateChatSuggestions();
-        updateCalorieMini();
-        window.scrollTo(0, 0);
+        updateChatSuggestions(); updateCalorieMini(); window.scrollTo(0, 0);
       }
     } catch (err) { document.getElementById('loading').style.display = 'none'; alert('Could not generate recipe. Try again!'); }
   }
 
-  // ── History functions ─────────────────────────────────────────────────────
+  // ── History ───────────────────────────────────────────────────────────────
   async function addToHistory(recipe) {
     if (!currentUser || !recipe || !recipe.title) return;
-    try { await fetch('/history', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify(recipe) }); }
-    catch (err) {}
+    try { await fetch('/history', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify(recipe) }); } catch (err) {}
   }
 
   async function loadHistoryPage() {
     const container = document.getElementById('history-container');
     if (!currentUser) {
-      container.innerHTML = `<div class="empty-state"><div class="empty-icon">🔒</div><div style="font-weight:600;color:#1a1a1a;margin-bottom:8px;">Sign up to track your history</div><div style="font-size:13px;margin-bottom:16px;">Create a free account to see every recipe you've viewed!</div><button class="generate-btn" onclick="openAuthModal('signup', 'Sign up free to track your recipe history!')">Sign up free</button></div>`;
+      container.innerHTML = `<div class="empty-state"><div class="empty-icon">🔒</div><div style="font-weight:600;color:#1a1a1a;margin-bottom:8px;">Sign up to track your history</div><div style="font-size:13px;margin-bottom:16px;">Create a free account to see every recipe you've viewed!</div><button class="generate-btn" onclick="openAuthModal('signup')">Sign up free</button></div>`;
       return;
     }
     container.innerHTML = '<div style="text-align:center;padding:2rem;color:#888;">Loading...</div>';
@@ -1020,13 +994,11 @@
     document.getElementById('log-btn').classList.remove('logged');
     document.getElementById('log-btn').disabled = false;
     document.getElementById('recipe-card').classList.add('visible');
-    if (recipe.title) { loadRating(recipe.title); }
-    updateChatSuggestions();
-    updateCalorieMini();
-    window.scrollTo(0, 0);
+    if (recipe.title) loadRating(recipe.title);
+    updateChatSuggestions(); updateCalorieMini(); window.scrollTo(0, 0);
   }
 
-  // ── Rating functions ──────────────────────────────────────────────────────
+  // ── Ratings ───────────────────────────────────────────────────────────────
   function hoverStars(n) { document.querySelectorAll('.star').forEach((s, i) => { s.style.color = i < n ? '#F5A623' : '#ddd'; }); }
   function resetStars() { document.querySelectorAll('.star').forEach((s, i) => { s.style.color = i < currentUserRating ? '#F5A623' : '#ddd'; }); }
 
@@ -1052,7 +1024,7 @@
     } catch (err) {}
   }
 
-  // ── Chat functions ────────────────────────────────────────────────────────
+  // ── Chat ──────────────────────────────────────────────────────────────────
   function toggleChat() {
     chatOpen = !chatOpen;
     document.getElementById('chat-window').classList.toggle('open', chatOpen);
@@ -1280,10 +1252,10 @@
     document.getElementById('serving-adjuster').style.display = 'flex';
   }
 
-  async function getPlannerRecipe(recipeName, mealType) {
+  async function getPlannerRecipe(recipeName) {
     openRecipeModal('Loading...', '', '<div style="text-align:center;padding:2rem;color:#888;">Fetching recipe for ' + recipeName + '...</div>');
     const diets = [...document.querySelectorAll('.diet-chip.active')].map(d => d.textContent);
-    const recipeIngredients = ingredients.length > 0 ? ingredients : ['common pantry staples', 'basic ingredients'];
+    const recipeIngredients = ingredients.length > 0 ? ingredients : ['common pantry staples'];
     try {
       const response = await fetch('/generate-recipe', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ ingredients: recipeIngredients, dietary_restrictions: diets, meal_type: '', recipe_name: recipeName, cook_time: '' }) });
       if (!response.ok) { document.getElementById('modal-recipe-body').innerHTML = '<div style="text-align:center;padding:1rem;color:#c0392b;">Server error. Try again.</div>'; return; }
@@ -1428,7 +1400,7 @@
     const recipeName = input.value.trim();
     if (!recipeName) { showError('Please type a recipe name to search!'); return; }
     const diets = [...document.querySelectorAll('.diet-chip.active')].map(d => d.textContent);
-    const searchIngredients = ingredients.length > 0 ? ingredients : ['common pantry staples', 'basic ingredients'];
+    const searchIngredients = ingredients.length > 0 ? ingredients : ['common pantry staples'];
     const loading = document.getElementById('loading');
     loading.textContent = 'Searching for ' + recipeName + '...';
     loading.style.display = 'block';
@@ -1454,8 +1426,7 @@
         initServingAdjuster(r);
         document.getElementById('recipe-card').classList.add('visible');
         if (r.title) { loadRating(r.title); addToHistory(currentRecipe); }
-        updateChatSuggestions();
-        updateCalorieMini();
+        updateChatSuggestions(); updateCalorieMini();
         input.value = '';
         window.scrollTo(0, document.getElementById('recipe-card').offsetTop);
       }
@@ -1552,8 +1523,7 @@
         initServingAdjuster(r);
         document.getElementById('recipe-card').classList.add('visible');
         if (r.title) { loadRating(r.title); addToHistory(currentRecipe); }
-        updateChatSuggestions();
-        updateCalorieMini();
+        updateChatSuggestions(); updateCalorieMini();
       }
     } catch (err) { showError('Something went wrong. Make sure your backend is running!'); }
     loading.style.display = 'none';
@@ -1848,7 +1818,7 @@
   async function loadFavoritesPage() {
     const container = document.getElementById('favorites-container');
     if (!currentUser) {
-      container.innerHTML = `<div class="empty-state"><div class="empty-icon">🔒</div><div style="font-weight:600;color:#1a1a1a;margin-bottom:8px;">Sign up to save recipes</div><div style="font-size:13px;margin-bottom:16px;">Create a free account to save your favorite recipes!</div><button class="generate-btn" onclick="openAuthModal('signup', 'Create a free account to save your favorite recipes!')">Sign up free</button></div>`;
+      container.innerHTML = `<div class="empty-state"><div class="empty-icon">🔒</div><div style="font-weight:600;color:#1a1a1a;margin-bottom:8px;">Sign up to save recipes</div><div style="font-size:13px;margin-bottom:16px;">Create a free account to save your favorite recipes!</div><button class="generate-btn" onclick="openAuthModal('signup')">Sign up free</button></div>`;
       return;
     }
     container.innerHTML = '<div style="text-align:center;padding:2rem;color:#888;">Loading...</div>';
@@ -1900,9 +1870,7 @@
     document.getElementById('log-btn').disabled = false;
     document.getElementById('recipe-card').classList.add('visible');
     if (fav.title) { loadRating(fav.title); addToHistory(fav); }
-    updateChatSuggestions();
-    updateCalorieMini();
-    window.scrollTo(0, 0);
+    updateChatSuggestions(); updateCalorieMini(); window.scrollTo(0, 0);
   }
 
   async function deleteFavorite(index) {
