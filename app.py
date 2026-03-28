@@ -47,7 +47,7 @@ def load_user(user_id):
 with app.app_context():
     db.create_all()
 
-# ── Shared recipes helpers ──────────────────────────────────────────────────
+# ── Shared recipes helpers ────────────────────────────────────────────────────
 SHARED_RECIPES_FILE = "shared_recipes.json"
 
 def load_shared_recipes():
@@ -62,9 +62,7 @@ def save_shared_recipe(share_id, recipe):
     with open(SHARED_RECIPES_FILE, "w", encoding="utf-8") as f:
         json.dump(recipes, f, ensure_ascii=False, indent=2)
 
-# ── Ratings helpers ──────────────────────────────────────────────────────────
-# Ratings stored as {recipe_name: {ip_address: rating}}
-# This allows one rating per person but lets them update it
+# ── Ratings helpers ───────────────────────────────────────────────────────────
 RATINGS_FILE = "ratings.json"
 
 def load_ratings():
@@ -74,7 +72,6 @@ def load_ratings():
         return json.load(f)
 
 def get_user_ip():
-    # Get real IP behind Render's proxy
     forwarded = request.headers.get('X-Forwarded-For')
     if forwarded:
         return forwarded.split(',')[0].strip()
@@ -84,7 +81,6 @@ def save_rating(recipe_name, rating, ip):
     ratings = load_ratings()
     if recipe_name not in ratings:
         ratings[recipe_name] = {}
-    # Overwrite if they've rated before — one rating per IP, updatable
     ratings[recipe_name][ip] = rating
     with open(RATINGS_FILE, "w", encoding="utf-8") as f:
         json.dump(ratings, f, ensure_ascii=False, indent=2)
@@ -95,12 +91,47 @@ def save_rating(recipe_name, rating, ip):
         'user_rating': rating
     }
 
-# ── Static page ─────────────────────────────────────────────────────────────
+# ── History helpers ───────────────────────────────────────────────────────────
+HISTORY_FILE = "history.json"
+
+def load_history():
+    if not os.path.exists(HISTORY_FILE):
+        return {}
+    with open(HISTORY_FILE, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+def save_to_history(user_id, recipe):
+    history = load_history()
+    key = str(user_id)
+    if key not in history:
+        history[key] = []
+    # Remove duplicate if same recipe already in history
+    history[key] = [r for r in history[key] if r.get('title') != recipe.get('title')]
+    # Add to front with timestamp
+    recipe['viewed_at'] = datetime.utcnow().strftime('%b %d, %Y')
+    history[key].insert(0, recipe)
+    # Keep only last 20
+    history[key] = history[key][:20]
+    with open(HISTORY_FILE, "w", encoding="utf-8") as f:
+        json.dump(history, f, ensure_ascii=False, indent=2)
+    return history[key]
+
+def get_user_history(user_id):
+    history = load_history()
+    return history.get(str(user_id), [])
+
+def clear_user_history(user_id):
+    history = load_history()
+    history[str(user_id)] = []
+    with open(HISTORY_FILE, "w", encoding="utf-8") as f:
+        json.dump(history, f, ensure_ascii=False, indent=2)
+
+# ── Static page ───────────────────────────────────────────────────────────────
 @app.route('/')
 def index():
     return app.send_static_file('index.html')
 
-# ── Auth routes ──────────────────────────────────────────────────────────────
+# ── Auth routes ───────────────────────────────────────────────────────────────
 @app.route('/auth/signup', methods=['POST'])
 def signup():
     data = request.json
@@ -195,6 +226,28 @@ def analyze_image_route():
         return jsonify({'ingredients': ingredients, 'scans_used': current_user.scans_used})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+# ── History routes ────────────────────────────────────────────────────────────
+@app.route('/history', methods=['GET'])
+def get_history():
+    if not current_user.is_authenticated:
+        return jsonify({'error': 'login_required'}), 401
+    return jsonify({'history': get_user_history(current_user.id)})
+
+@app.route('/history', methods=['POST'])
+def add_history():
+    if not current_user.is_authenticated:
+        return jsonify({'success': False}), 401
+    recipe = request.json
+    save_to_history(current_user.id, recipe)
+    return jsonify({'success': True})
+
+@app.route('/history/clear', methods=['DELETE'])
+def clear_history():
+    if not current_user.is_authenticated:
+        return jsonify({'error': 'login_required'}), 401
+    clear_user_history(current_user.id)
+    return jsonify({'success': True})
 
 # ── Chat route ────────────────────────────────────────────────────────────────
 @app.route('/chat', methods=['POST'])
@@ -367,9 +420,7 @@ def view_shared_recipe(share_id):
 </head>
 <body>
 <div class="app">
-  <div class="header">
-    <div class="logo">Scan<span>&Savor</span></div>
-  </div>
+  <div class="header"><div class="logo">Scan<span>&Savor</span></div></div>
   <div class="shared-badge">📤 Shared recipe</div>
   <div class="card">
     <div class="recipe-title">{recipe.get('title', 'Recipe')}</div>
