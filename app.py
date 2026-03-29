@@ -10,73 +10,73 @@ from flask_login import LoginManager, login_user, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from dotenv import load_dotenv
 import stripe
-
+ 
 from models import db, User
 from recipe_generator import generate_recipe_list, generate_recipe, analyze_image, generate_meal_plan, generate_grocery_list
 from favorites import load_favorites, save_favorite, remove_favorite
 from meal_plans import load_meal_plans, save_meal_plan, remove_meal_plan
-
+ 
 load_dotenv()
-
+ 
 app = Flask(__name__, static_folder='.', static_url_path='')
 app.secret_key = os.environ.get('SECRET_KEY', 'scanandsavor-secret-key-2024')
 app.config['SESSION_COOKIE_SECURE'] = True
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'None'
-
+ 
 database_url = os.environ.get('DATABASE_URL', 'sqlite:///users.db')
 if database_url.startswith('postgres://'):
     database_url = database_url.replace('postgres://', 'postgresql://', 1)
 app.config['SQLALCHEMY_DATABASE_URI'] = database_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-
+ 
 db.init_app(app)
 CORS(app, supports_credentials=True, origins=['https://scanandsavor.onrender.com', 'http://localhost:5000'])
-
+ 
 login_manager = LoginManager()
 login_manager.init_app(app)
-
+ 
 stripe.api_key = os.environ.get('STRIPE_SECRET_KEY')
 STRIPE_BASIC_PRICE_ID = os.environ.get('STRIPE_BASIC_PRICE_ID')
 STRIPE_PREMIUM_PRICE_ID = os.environ.get('STRIPE_PREMIUM_PRICE_ID')
-
+ 
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
-
+ 
 with app.app_context():
     db.create_all()
-
+ 
 # ── Shared recipes helpers ────────────────────────────────────────────────────
 SHARED_RECIPES_FILE = "shared_recipes.json"
-
+ 
 def load_shared_recipes():
     if not os.path.exists(SHARED_RECIPES_FILE):
         return {}
     with open(SHARED_RECIPES_FILE, "r", encoding="utf-8") as f:
         return json.load(f)
-
+ 
 def save_shared_recipe(share_id, recipe):
     recipes = load_shared_recipes()
     recipes[share_id] = recipe
     with open(SHARED_RECIPES_FILE, "w", encoding="utf-8") as f:
         json.dump(recipes, f, ensure_ascii=False, indent=2)
-
+ 
 # ── Ratings helpers ───────────────────────────────────────────────────────────
 RATINGS_FILE = "ratings.json"
-
+ 
 def load_ratings():
     if not os.path.exists(RATINGS_FILE):
         return {}
     with open(RATINGS_FILE, "r", encoding="utf-8") as f:
         return json.load(f)
-
+ 
 def get_user_ip():
     forwarded = request.headers.get('X-Forwarded-For')
     if forwarded:
         return forwarded.split(',')[0].strip()
     return request.remote_addr or 'unknown'
-
+ 
 def save_rating(recipe_name, rating, ip):
     ratings = load_ratings()
     if recipe_name not in ratings:
@@ -90,16 +90,16 @@ def save_rating(recipe_name, rating, ip):
         'count': len(all_ratings),
         'user_rating': rating
     }
-
+ 
 # ── History helpers ───────────────────────────────────────────────────────────
 HISTORY_FILE = "history.json"
-
+ 
 def load_history():
     if not os.path.exists(HISTORY_FILE):
         return {}
     with open(HISTORY_FILE, "r", encoding="utf-8") as f:
         return json.load(f)
-
+ 
 def save_to_history(user_id, recipe):
     history = load_history()
     key = str(user_id)
@@ -112,49 +112,49 @@ def save_to_history(user_id, recipe):
     with open(HISTORY_FILE, "w", encoding="utf-8") as f:
         json.dump(history, f, ensure_ascii=False, indent=2)
     return history[key]
-
+ 
 def get_user_history(user_id):
     history = load_history()
     return history.get(str(user_id), [])
-
+ 
 def clear_user_history(user_id):
     history = load_history()
     history[str(user_id)] = []
     with open(HISTORY_FILE, "w", encoding="utf-8") as f:
         json.dump(history, f, ensure_ascii=False, indent=2)
-
+ 
 # ── Calorie tracker helpers ───────────────────────────────────────────────────
 CALORIE_LOG_FILE = "calorie_log.json"
 CALORIE_GOALS_FILE = "calorie_goals.json"
-
+ 
 def load_calorie_log():
     if not os.path.exists(CALORIE_LOG_FILE):
         return {}
     with open(CALORIE_LOG_FILE, "r", encoding="utf-8") as f:
         return json.load(f)
-
+ 
 def save_calorie_log_file(data):
     with open(CALORIE_LOG_FILE, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
-
+ 
 def load_calorie_goals():
     if not os.path.exists(CALORIE_GOALS_FILE):
         return {}
     with open(CALORIE_GOALS_FILE, "r", encoding="utf-8") as f:
         return json.load(f)
-
+ 
 def save_calorie_goals_file(data):
     with open(CALORIE_GOALS_FILE, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
-
+ 
 def get_today_key():
     return datetime.utcnow().strftime('%Y-%m-%d')
-
+ 
 def get_user_today_log(user_id):
     log = load_calorie_log()
     key = f"{user_id}_{get_today_key()}"
     return log.get(key, [])
-
+ 
 def add_to_calorie_log(user_id, meal_name, calories):
     log = load_calorie_log()
     key = f"{user_id}_{get_today_key()}"
@@ -167,7 +167,7 @@ def add_to_calorie_log(user_id, meal_name, calories):
     })
     save_calorie_log_file(log)
     return log[key]
-
+ 
 def delete_from_calorie_log(user_id, index):
     log = load_calorie_log()
     key = f"{user_id}_{get_today_key()}"
@@ -175,21 +175,21 @@ def delete_from_calorie_log(user_id, index):
         log[key].pop(index)
     save_calorie_log_file(log)
     return log.get(key, [])
-
+ 
 def get_user_calorie_goal(user_id):
     goals = load_calorie_goals()
     return goals.get(str(user_id), 2000)
-
+ 
 def set_user_calorie_goal(user_id, goal):
     goals = load_calorie_goals()
     goals[str(user_id)] = int(goal)
     save_calorie_goals_file(goals)
-
+ 
 # ── Static page ───────────────────────────────────────────────────────────────
 @app.route('/')
 def index():
     return app.send_static_file('index.html')
-
+ 
 # ── Auth routes ───────────────────────────────────────────────────────────────
 @app.route('/auth/signup', methods=['POST'])
 def signup():
@@ -209,7 +209,7 @@ def signup():
     db.session.commit()
     login_user(user, remember=True)
     return jsonify({'user': {'id': user.id, 'name': user.name, 'email': user.email, 'tier': user.tier, 'scans_used': user.scans_used}})
-
+ 
 @app.route('/auth/login', methods=['POST'])
 def login():
     data = request.json
@@ -220,18 +220,18 @@ def login():
         return jsonify({'error': 'Invalid email or password'}), 401
     login_user(user, remember=True)
     return jsonify({'user': {'id': user.id, 'name': user.name, 'email': user.email, 'tier': user.tier, 'scans_used': user.scans_used}})
-
+ 
 @app.route('/auth/logout', methods=['POST'])
 def logout():
     logout_user()
     return jsonify({'success': True})
-
+ 
 @app.route('/auth/me')
 def me():
     if current_user.is_authenticated:
         return jsonify({'user': {'id': current_user.id, 'name': current_user.name, 'email': current_user.email, 'tier': current_user.tier, 'scans_used': current_user.scans_used}})
     return jsonify({'user': None})
-
+ 
 # ── Recipe routes ─────────────────────────────────────────────────────────────
 @app.route('/recipe-list', methods=['POST'])
 def recipe_list():
@@ -247,7 +247,7 @@ def recipe_list():
         return jsonify({'recipe_list': result})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
-
+ 
 @app.route('/generate-recipe', methods=['POST'])
 def generate_recipe_route():
     data = request.json
@@ -261,7 +261,7 @@ def generate_recipe_route():
         return jsonify({'recipe': result})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
-
+ 
 @app.route('/analyze-image', methods=['POST'])
 def analyze_image_route():
     if not current_user.is_authenticated:
@@ -285,7 +285,7 @@ def analyze_image_route():
         return jsonify({'ingredients': ingredients, 'scans_used': current_user.scans_used})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
-
+ 
 # ── Calorie tracker routes ────────────────────────────────────────────────────
 @app.route('/calorie-goal', methods=['GET'])
 def get_calorie_goal():
@@ -293,7 +293,7 @@ def get_calorie_goal():
         return jsonify({'error': 'login_required'}), 401
     goal = get_user_calorie_goal(current_user.id)
     return jsonify({'goal': goal})
-
+ 
 @app.route('/calorie-goal', methods=['POST'])
 def set_calorie_goal():
     if not current_user.is_authenticated:
@@ -302,7 +302,7 @@ def set_calorie_goal():
     goal = data.get('goal', 2000)
     set_user_calorie_goal(current_user.id, goal)
     return jsonify({'goal': int(goal)})
-
+ 
 @app.route('/calorie-log', methods=['GET'])
 def get_calorie_log():
     if not current_user.is_authenticated:
@@ -311,7 +311,7 @@ def get_calorie_log():
     goal = get_user_calorie_goal(current_user.id)
     total = sum(e['calories'] for e in entries)
     return jsonify({'entries': entries, 'total': total, 'goal': goal})
-
+ 
 @app.route('/calorie-log', methods=['POST'])
 def log_calories():
     if not current_user.is_authenticated:
@@ -325,7 +325,7 @@ def log_calories():
     goal = get_user_calorie_goal(current_user.id)
     total = sum(e['calories'] for e in entries)
     return jsonify({'entries': entries, 'total': total, 'goal': goal})
-
+ 
 @app.route('/calorie-log/<int:index>', methods=['DELETE'])
 def delete_calorie_entry(index):
     if not current_user.is_authenticated:
@@ -334,14 +334,14 @@ def delete_calorie_entry(index):
     goal = get_user_calorie_goal(current_user.id)
     total = sum(e['calories'] for e in entries)
     return jsonify({'entries': entries, 'total': total, 'goal': goal})
-
+ 
 # ── History routes ────────────────────────────────────────────────────────────
 @app.route('/history', methods=['GET'])
 def get_history():
     if not current_user.is_authenticated:
         return jsonify({'error': 'login_required'}), 401
     return jsonify({'history': get_user_history(current_user.id)})
-
+ 
 @app.route('/history', methods=['POST'])
 def add_history():
     if not current_user.is_authenticated:
@@ -349,14 +349,14 @@ def add_history():
     recipe = request.json
     save_to_history(current_user.id, recipe)
     return jsonify({'success': True})
-
+ 
 @app.route('/history/clear', methods=['DELETE'])
 def clear_history():
     if not current_user.is_authenticated:
         return jsonify({'error': 'login_required'}), 401
     clear_user_history(current_user.id)
     return jsonify({'success': True})
-
+ 
 # ── Chat route ────────────────────────────────────────────────────────────────
 @app.route('/chat', methods=['POST'])
 def chat():
@@ -387,7 +387,7 @@ If a recipe is provided as context, use it to give specific helpful answers abou
         return jsonify({'reply': response.content[0].text})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
-
+ 
 # ── Ratings routes ────────────────────────────────────────────────────────────
 @app.route('/rate-recipe', methods=['POST'])
 def rate_recipe():
@@ -399,7 +399,7 @@ def rate_recipe():
     ip = get_user_ip()
     result = save_rating(recipe_name, rating, ip)
     return jsonify(result)
-
+ 
 @app.route('/ratings/<path:recipe_name>', methods=['GET'])
 def get_rating(recipe_name):
     ratings = load_ratings()
@@ -414,7 +414,7 @@ def get_rating(recipe_name):
         'count': len(all_ratings),
         'user_rating': user_rating
     })
-
+ 
 @app.route('/ratings/top', methods=['GET'])
 def get_top_ratings():
     ratings = load_ratings()
@@ -431,7 +431,7 @@ def get_top_ratings():
             })
     top.sort(key=lambda x: (x['average'], x['count']), reverse=True)
     return jsonify({'top': top[:10]})
-
+ 
 # ── Favorites routes ──────────────────────────────────────────────────────────
 @app.route('/favorites', methods=['GET'])
 def get_favorites():
@@ -439,7 +439,7 @@ def get_favorites():
         return jsonify({'error': 'signup_required'}), 401
     favorites = load_favorites()
     return jsonify({'favorites': favorites})
-
+ 
 @app.route('/favorites', methods=['POST'])
 def add_favorite():
     if not current_user.is_authenticated:
@@ -447,14 +447,14 @@ def add_favorite():
     recipe = request.json
     favorites = save_favorite(recipe)
     return jsonify({'favorites': favorites})
-
+ 
 @app.route('/favorites/<int:index>', methods=['DELETE'])
 def delete_favorite(index):
     if not current_user.is_authenticated:
         return jsonify({'error': 'Not logged in'}), 401
     favorites = remove_favorite(index)
     return jsonify({'favorites': favorites})
-
+ 
 # ── Meal plan routes ──────────────────────────────────────────────────────────
 @app.route('/meal-plan', methods=['POST'])
 def meal_plan():
@@ -465,12 +465,13 @@ def meal_plan():
     dietary_restrictions = data.get('dietary_restrictions', [])
     days = data.get('days', 7)
     budget = data.get('budget', None)
+    selected_meals = data.get('selected_meals', ['breakfast', 'lunch', 'dinner'])
     try:
-        result = generate_meal_plan(ingredients, dietary_restrictions, days, budget)
+        result = generate_meal_plan(ingredients, dietary_restrictions, days, budget, selected_meals)
         return jsonify({'meal_plan': result})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
-
+ 
 @app.route('/grocery-list', methods=['POST'])
 def grocery_list():
     if not current_user.is_authenticated or current_user.tier != 'premium':
@@ -483,23 +484,23 @@ def grocery_list():
         return jsonify({'grocery_list': result})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
-
+ 
 @app.route('/meal-plans', methods=['GET'])
 def get_meal_plans():
     plans = load_meal_plans()
     return jsonify({'meal_plans': plans})
-
+ 
 @app.route('/meal-plans', methods=['POST'])
 def add_meal_plan():
     plan = request.json
     plans = save_meal_plan(plan)
     return jsonify({'meal_plans': plans})
-
+ 
 @app.route('/meal-plans/<int:index>', methods=['DELETE'])
 def delete_meal_plan(index):
     plans = remove_meal_plan(index)
     return jsonify({'meal_plans': plans})
-
+ 
 # ── Recipe sharing routes ─────────────────────────────────────────────────────
 @app.route('/share-recipe', methods=['POST'])
 def share_recipe():
@@ -508,7 +509,7 @@ def share_recipe():
     save_shared_recipe(share_id, data)
     share_url = f"https://scanandsavor.onrender.com/recipe/{share_id}"
     return jsonify({'share_url': share_url})
-
+ 
 @app.route('/recipe/<share_id>')
 def view_shared_recipe(share_id):
     recipes = load_shared_recipes()
@@ -561,7 +562,7 @@ def view_shared_recipe(share_id):
 </div>
 </body>
 </html>"""
-
+ 
 # ── Stripe routes ─────────────────────────────────────────────────────────────
 @app.route('/stripe/create-checkout', methods=['POST'])
 def create_checkout():
@@ -595,7 +596,7 @@ def create_checkout():
         return jsonify({'checkout_url': checkout.url})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
-
+ 
 @app.route('/stripe/cancel-subscription', methods=['POST'])
 def cancel_subscription():
     if not current_user.is_authenticated:
@@ -609,7 +610,7 @@ def cancel_subscription():
         return jsonify({'success': True})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
-
+ 
 @app.route('/stripe/webhook', methods=['POST'])
 def stripe_webhook():
     payload = request.data
@@ -646,6 +647,7 @@ def stripe_webhook():
                 user.stripe_subscription_id = None
                 db.session.commit()
     return jsonify({'success': True})
-
+ 
 if __name__ == '__main__':
     app.run(debug=True)
+ 
