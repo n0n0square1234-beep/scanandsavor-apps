@@ -569,6 +569,17 @@
             </div>
           </div>
           <div style="display:flex;align-items:center;gap:8px;margin-top:12px;">
+            <div style="font-size:13px;color:#555;font-weight:600;white-space:nowrap;">👥 Cooking for:</div>
+            <div style="display:flex;align-items:center;gap:8px;background:#f5f5f0;border-radius:10px;padding:6px 12px;flex:1;">
+              <button onclick="changePlanServings(-1)" style="width:28px;height:28px;border-radius:50%;border:none;background:#1D9E75;color:white;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">−</button>
+              <div style="flex:1;text-align:center;">
+                <span id="plan-servings-count" style="font-size:18px;font-weight:700;color:#1a1a1a;">2</span>
+                <span style="font-size:13px;color:#888;margin-left:4px;" id="plan-servings-label">people</span>
+              </div>
+              <button onclick="changePlanServings(1)" style="width:28px;height:28px;border-radius:50%;border:none;background:#1D9E75;color:white;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">+</button>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;margin-top:10px;">
             <div style="font-size:13px;color:#555;font-weight:600;white-space:nowrap;">Weekly budget:</div>
             <div style="display:flex;align-items:center;border:1px solid #e5e5e5;border-radius:10px;overflow:hidden;flex:1;">
               <span style="padding:8px 10px;background:#f5f5f0;color:#888;font-size:15px;border-right:1px solid #e5e5e5;">$</span>
@@ -769,6 +780,7 @@
   let calorieGoal = 2000;
   let selectedMealTypes = ['breakfast', 'lunch', 'dinner'];
   let customMealTypes = [];
+  let planServings = 2;
  
   function toggleDarkMode() {
     document.body.classList.toggle('dark');
@@ -1326,13 +1338,13 @@
     const diets = [...document.querySelectorAll('.diet-chip.active')].map(d => d.textContent);
     const recipeIngredients = ingredients.length > 0 ? ingredients : ['common pantry staples'];
     try {
-      const response = await fetch('/generate-recipe', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ ingredients: recipeIngredients, dietary_restrictions: diets, meal_type: '', recipe_name: recipeName, cook_time: '' }) });
+      const response = await fetch('/generate-recipe', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ ingredients: recipeIngredients, dietary_restrictions: diets, meal_type: '', recipe_name: recipeName, cook_time: '', servings: planServings }) });
       if (!response.ok) { document.getElementById('modal-recipe-body').innerHTML = '<div style="text-align:center;padding:1rem;color:#c0392b;">Server error. Try again.</div>'; return; }
       const data = await response.json();
       if (data.recipe) {
         const r = parseRecipe(data.recipe);
         document.getElementById('modal-recipe-title').textContent = r.title || recipeName;
-        document.getElementById('modal-recipe-meta').textContent = [r.time, r.servings + ' servings'].filter(Boolean).join(' · ');
+        document.getElementById('modal-recipe-meta').textContent = [r.time, planServings + (planServings === 1 ? ' serving' : ' servings')].filter(Boolean).join(' · ');
         document.getElementById('modal-recipe-body').innerHTML = buildRecipeHTML(r);
       } else { document.getElementById('modal-recipe-body').innerHTML = '<div style="text-align:center;padding:1rem;color:#c0392b;">Could not load recipe. Try again.</div>'; }
     } catch (err) { document.getElementById('modal-recipe-body').innerHTML = '<div style="text-align:center;padding:1rem;color:#c0392b;">Could not load recipe. Try again.</div>'; }
@@ -1621,7 +1633,7 @@
     document.getElementById('budget-display').style.display = 'none';
     currentMealPlanData = null;
     try {
-      const response = await fetch('/meal-plan', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ ingredients, dietary_restrictions: diets, days, budget, selected_meals: [...selectedMealTypes, ...customMealTypes] }) });
+      const response = await fetch('/meal-plan', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ ingredients, dietary_restrictions: diets, days, budget, selected_meals: [...selectedMealTypes, ...customMealTypes], servings: planServings }) });
       const data = await response.json();
       if (data.error === 'premium_required') { updatePlannerPage(); }
       else if (data.error) { document.getElementById('meal-plan-container').innerHTML = '<div style="text-align:center;padding:1rem;color:#c0392b;">' + data.error + '</div>'; }
@@ -1665,7 +1677,7 @@
     btn.disabled = true; loading.style.display = 'block';
     document.getElementById('grocery-container').innerHTML = '';
     try {
-      const response = await fetch('/grocery-list', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ selected_meals: selectedMeals, dietary_restrictions: diets }) });
+      const response = await fetch('/grocery-list', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ selected_meals: selectedMeals, dietary_restrictions: diets, servings: planServings }) });
       const data = await response.json();
       if (data.error) { alert(data.error); } else { renderGroceryList(data.grocery_list); }
     } catch (err) { alert('Something went wrong. Try again!'); }
@@ -2112,6 +2124,12 @@
   }
  
   // ── Meal type selector ────────────────────────────────────────────────────
+  function changePlanServings(delta) {
+    planServings = Math.max(1, planServings + delta);
+    document.getElementById('plan-servings-count').textContent = planServings;
+    document.getElementById('plan-servings-label').textContent = planServings === 1 ? 'person' : 'people';
+  }
+ 
   function toggleMealType(chip) {
     const meal = chip.getAttribute('data-meal');
     if (chip.classList.contains('active')) {

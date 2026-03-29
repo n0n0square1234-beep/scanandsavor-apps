@@ -97,7 +97,7 @@ def generate_recipe_list(ingredients, dietary_restrictions=[], meal_type="", coo
     )
     return message.content[0].text
  
-def generate_recipe(ingredients, dietary_restrictions=[], meal_type="", recipe_name="", cook_time=""):
+def generate_recipe(ingredients, dietary_restrictions=[], meal_type="", recipe_name="", cook_time="", servings=None):
     if meal_type:
         ingredients = filter_by_meal(ingredients, meal_type)
  
@@ -105,6 +105,7 @@ def generate_recipe(ingredients, dietary_restrictions=[], meal_type="", recipe_n
     diet_list = ", ".join(dietary_restrictions)
     diet_text = "Dietary requirements: " + diet_list + "." if diet_list else ""
     time_text = "This recipe MUST be completable in " + cook_time + " or less." if cook_time else ""
+    servings_text = "This recipe MUST be scaled to make exactly " + str(servings) + " " + ("serving" if servings == 1 else "servings") + ". Scale ALL ingredient quantities accordingly." if servings else ""
  
     meal_examples = {
         "breakfast": "pancakes, omelette, french toast, smoothie bowl, breakfast burrito",
@@ -123,6 +124,8 @@ def generate_recipe(ingredients, dietary_restrictions=[], meal_type="", recipe_n
         user_prompt += "You MUST ONLY use these approved " + meal_type + " ingredients: " + ingredient_list + "\n"
         user_prompt += "Do NOT add any vegetables, meat, or savory ingredients.\n"
         user_prompt += diet_text + "\n" + time_text + "\n"
+        if servings_text:
+            user_prompt += servings_text + "\n"
     else:
         system_prompt = "You are a professional chef and nutritionist."
         user_prompt = "Create a recipe"
@@ -130,9 +133,12 @@ def generate_recipe(ingredients, dietary_restrictions=[], meal_type="", recipe_n
             user_prompt += " called " + recipe_name
         user_prompt += " using: " + ingredient_list + "\n"
         user_prompt += diet_text + "\n" + time_text + "\n"
+        if servings_text:
+            user_prompt += servings_text + "\n"
  
+    servings_format = str(servings) if servings else "[number]"
     user_prompt += "Format exactly like this:\n"
-    user_prompt += "RECIPE NAME: [name]\nTIME: [total time]\nSERVINGS: [number]\n"
+    user_prompt += "RECIPE NAME: [name]\nTIME: [total time]\nSERVINGS: " + servings_format + "\n"
     user_prompt += "CALORIES: [number only]\nPROTEIN: [number only in grams]\nCARBS: [number only in grams]\n"
     user_prompt += "FAT: [number only in grams]\nFIBER: [number only in grams]\nSUGAR: [number only in grams]\n"
     user_prompt += "SODIUM: [number only in mg]\nVITAMIN_C: [number only in mg]\nCALCIUM: [number only in mg]\n"
@@ -149,7 +155,7 @@ def generate_recipe(ingredients, dietary_restrictions=[], meal_type="", recipe_n
     )
     return message.content[0].text
  
-def generate_meal_plan(ingredients, dietary_restrictions=[], days=7, budget=None, selected_meals=None):
+def generate_meal_plan(ingredients, dietary_restrictions=[], days=7, budget=None, selected_meals=None, servings=2):
     # Default to all three meals if none specified
     if selected_meals is None:
         selected_meals = ['breakfast', 'lunch', 'dinner']
@@ -162,6 +168,7 @@ def generate_meal_plan(ingredients, dietary_restrictions=[], days=7, budget=None
     diet_list = ", ".join(dietary_restrictions)
     diet_text = "All meals must be: " + diet_list + "." if diet_list else ""
     budget_text = "The TOTAL estimated grocery cost for the entire meal plan must stay within $" + str(budget) + " based on average US grocery prices." if budget else ""
+    servings_text = "All recipes and ingredient quantities must be scaled for " + str(servings) + " " + ("person" if servings == 1 else "people") + "."
  
     # Build human-readable meal list for the prompt
     meals_str = ", ".join(m.upper() for m in ai_meals) if ai_meals else "LUNCH, DINNER"
@@ -170,10 +177,13 @@ def generate_meal_plan(ingredients, dietary_restrictions=[], days=7, budget=None
  
     user_prompt = "Create a " + str(days) + " day meal plan.\n"
     user_prompt += "Available ingredients: " + ingredient_list + "\n"
+    user_prompt += "Cooking for: " + str(servings) + " " + ("person" if servings == 1 else "people") + "\n"
+    user_prompt += servings_text + "\n"
     user_prompt += diet_text + "\n"
     user_prompt += budget_text + "\n"
     user_prompt += "Only include these meals each day: " + meals_str + "\n"
     user_prompt += "For each meal slot provide 3 different options. Keep meal names SHORT (max 5 words).\n"
+    user_prompt += "Calories and macros shown should be PER PERSON per serving.\n"
     user_prompt += "At the very end after all days, add: ESTIMATED_TOTAL: $[number]\n"
     user_prompt += "Format EXACTLY like this for each day:\n\n"
  
@@ -202,16 +212,19 @@ def generate_meal_plan(ingredients, dietary_restrictions=[], days=7, budget=None
     )
     return message.content[0].text
  
-def generate_grocery_list(selected_meals, dietary_restrictions=[]):
+def generate_grocery_list(selected_meals, dietary_restrictions=[], servings=2):
     meal_list = ", ".join(selected_meals)
     diet_list = ", ".join(dietary_restrictions)
     diet_text = "All items must be suitable for: " + diet_list + "." if diet_list else ""
+    servings_text = "Scale ALL ingredient quantities for " + str(servings) + " " + ("person" if servings == 1 else "people") + ". Adjust package sizes and amounts accordingly."
  
     system_prompt = "You are a professional chef and nutritionist who creates organized grocery lists with estimated prices based on average US supermarket prices in 2024."
  
     user_prompt = "Create a complete grocery list with estimated prices for these meals: " + meal_list + "\n"
+    user_prompt += "Cooking for: " + str(servings) + " " + ("person" if servings == 1 else "people") + "\n"
+    user_prompt += servings_text + "\n"
     user_prompt += diet_text + "\n"
-    user_prompt += "Organize by category. Include quantities and estimated price for each item based on average US grocery store prices.\n"
+    user_prompt += "Organize by category. Include quantities scaled for " + str(servings) + " people and estimated price for each item based on average US grocery store prices.\n"
     user_prompt += "At the end add a GROCERY_TOTAL: $[number] line.\n"
     user_prompt += "Format exactly like this:\n\n"
     user_prompt += "PRODUCE:\n- [item and quantity] | $[price]\n\n"

@@ -256,8 +256,9 @@ def generate_recipe_route():
     meal_type = data.get('meal_type', '')
     recipe_name = data.get('recipe_name', '')
     cook_time = data.get('cook_time', '')
+    servings = data.get('servings', None)
     try:
-        result = generate_recipe(ingredients, dietary_restrictions, meal_type, recipe_name, cook_time)
+        result = generate_recipe(ingredients, dietary_restrictions, meal_type, recipe_name, cook_time, servings)
         return jsonify({'recipe': result})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -466,8 +467,9 @@ def meal_plan():
     days = data.get('days', 7)
     budget = data.get('budget', None)
     selected_meals = data.get('selected_meals', ['breakfast', 'lunch', 'dinner'])
+    servings = data.get('servings', 2)
     try:
-        result = generate_meal_plan(ingredients, dietary_restrictions, days, budget, selected_meals)
+        result = generate_meal_plan(ingredients, dietary_restrictions, days, budget, selected_meals, servings)
         return jsonify({'meal_plan': result})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -479,8 +481,9 @@ def grocery_list():
     data = request.json
     selected_meals = data.get('selected_meals', [])
     dietary_restrictions = data.get('dietary_restrictions', [])
+    servings = data.get('servings', 2)
     try:
-        result = generate_grocery_list(selected_meals, dietary_restrictions)
+        result = generate_grocery_list(selected_meals, dietary_restrictions, servings)
         return jsonify({'grocery_list': result})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
