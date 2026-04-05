@@ -1,3 +1,6 @@
+
+Copy
+
 import os
 import base64
 from anthropic import Anthropic
@@ -155,7 +158,7 @@ def generate_recipe(ingredients, dietary_restrictions=[], meal_type="", recipe_n
     )
     return message.content[0].text
  
-def generate_meal_plan(ingredients, dietary_restrictions=[], days=7, budget=None, selected_meals=None, servings=2):
+def generate_meal_plan(ingredients, dietary_restrictions=[], days=7, budget=None, selected_meals=None, servings=2, nutrition_targets=None):
     # Default to all three meals if none specified
     if selected_meals is None:
         selected_meals = ['breakfast', 'lunch', 'dinner']
@@ -170,6 +173,27 @@ def generate_meal_plan(ingredients, dietary_restrictions=[], days=7, budget=None
     budget_text = "The TOTAL estimated grocery cost for the entire meal plan must stay within $" + str(budget) + " based on average US grocery prices." if budget else ""
     servings_text = "All recipes and ingredient quantities must be scaled for " + str(servings) + " " + ("person" if servings == 1 else "people") + "."
  
+    # Build nutrition targets instruction
+    nutrition_text = ""
+    if nutrition_targets:
+        targets = []
+        label_map = {
+            'calories': 'calories', 'protein': 'protein (g)', 'carbs': 'carbs (g)',
+            'fat': 'fat (g)', 'fiber': 'fiber (g)', 'sugar': 'sugar (g)', 'sodium': 'sodium (mg)'
+        }
+        for key, label in label_map.items():
+            if key in nutrition_targets and nutrition_targets[key]:
+                targets.append(f"{label}: ~{nutrition_targets[key]}")
+        if targets:
+            num_meals = len(ai_meals) if ai_meals else 1
+            nutrition_text = (
+                "IMPORTANT — The user has personal nutrition goals. Each day's total meals combined must hit these targets per person:\n"
+                + "\n".join(f"  - {t}" for t in targets)
+                + f"\nSpread these targets across the {num_meals} meal(s) per day. "
+                + "Choose meal options whose combined totals closely match these daily goals. "
+                + "Prioritize hitting the calorie and protein targets above all others."
+            )
+ 
     # Build human-readable meal list for the prompt
     meals_str = ", ".join(m.upper() for m in ai_meals) if ai_meals else "LUNCH, DINNER"
  
@@ -181,6 +205,8 @@ def generate_meal_plan(ingredients, dietary_restrictions=[], days=7, budget=None
     user_prompt += servings_text + "\n"
     user_prompt += diet_text + "\n"
     user_prompt += budget_text + "\n"
+    if nutrition_text:
+        user_prompt += nutrition_text + "\n"
     user_prompt += "Only include these meals each day: " + meals_str + "\n"
     user_prompt += "For each meal slot provide 3 different options. Keep meal names SHORT (max 5 words).\n"
     user_prompt += "Calories and macros shown should be PER PERSON per serving.\n"

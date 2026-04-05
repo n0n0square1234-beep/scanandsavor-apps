@@ -520,8 +520,9 @@ def meal_plan():
     budget = data.get('budget', None)
     selected_meals = data.get('selected_meals', ['breakfast', 'lunch', 'dinner'])
     servings = data.get('servings', 2)
+    nutrition_targets = data.get('nutrition_targets', None)
     try:
-        result = generate_meal_plan(ingredients, dietary_restrictions, days, budget, selected_meals, servings)
+        result = generate_meal_plan(ingredients, dietary_restrictions, days, budget, selected_meals, servings, nutrition_targets)
         return jsonify({'meal_plan': result})
     except Exception as e:
         return jsonify({'error': str(e)}), 500

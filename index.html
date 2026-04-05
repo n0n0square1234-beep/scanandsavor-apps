@@ -1795,8 +1795,25 @@
     document.getElementById('grocery-container').innerHTML = '';
     document.getElementById('budget-display').style.display = 'none';
     currentMealPlanData = null;
+ 
+    // Pull user's nutrition goals if logged in
+    let nutrition_targets = null;
+    if (currentUser) {
+      try {
+        const nRes = await fetch('/nutrition-goals', { credentials: 'include' });
+        const nData = await nRes.json();
+        if (nData.goals && Object.keys(nData.goals).length > 0) {
+          nutrition_targets = nData.goals;
+          // also include calorie goal
+          const cRes = await fetch('/calorie-log', { credentials: 'include' });
+          const cData = await cRes.json();
+          if (cData.goal) nutrition_targets.calories = cData.goal;
+        }
+      } catch (e) {}
+    }
+ 
     try {
-      const response = await fetch('/meal-plan', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ ingredients, dietary_restrictions: diets, days, budget, selected_meals: [...selectedMealTypes, ...customMealTypes], servings: planServings }) });
+      const response = await fetch('/meal-plan', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ ingredients, dietary_restrictions: diets, days, budget, selected_meals: [...selectedMealTypes, ...customMealTypes], servings: planServings, nutrition_targets }) });
       const data = await response.json();
       if (data.error === 'premium_required') { updatePlannerPage(); }
       else if (data.error) { document.getElementById('meal-plan-container').innerHTML = '<div style="text-align:center;padding:1rem;color:#c0392b;">' + data.error + '</div>'; }
@@ -1804,6 +1821,20 @@
         currentMealPlanData = { text: data.meal_plan, days, diets };
         renderMealPlan(data.meal_plan, days);
         document.getElementById('plan-actions').style.display = 'block';
+ 
+        // Show nutrition targets banner if goals were used
+        if (nutrition_targets) {
+          const parts = [];
+          if (nutrition_targets.calories) parts.push(`${nutrition_targets.calories} cal`);
+          if (nutrition_targets.protein)  parts.push(`${nutrition_targets.protein}g protein`);
+          if (nutrition_targets.carbs)    parts.push(`${nutrition_targets.carbs}g carbs`);
+          if (nutrition_targets.fat)      parts.push(`${nutrition_targets.fat}g fat`);
+          const banner = document.createElement('div');
+          banner.style.cssText = 'background:#E1F5EE;border-radius:12px;padding:10px 14px;margin-bottom:8px;display:flex;align-items:center;gap:10px;';
+          banner.innerHTML = `<span style="font-size:18px;">🎯</span><div><div style="font-size:13px;font-weight:600;color:#0F6E56;">Built around your nutrition goals</div><div style="font-size:12px;color:#0F6E56;margin-top:1px;">${parts.join(' · ')}</div></div>`;
+          document.getElementById('meal-plan-container').insertAdjacentElement('beforebegin', banner);
+        }
+ 
         const totalMatch = data.meal_plan.match(/ESTIMATED_TOTAL:\s*\$?([\d.]+)/);
         if (totalMatch) {
           const total = parseFloat(totalMatch[1]);
