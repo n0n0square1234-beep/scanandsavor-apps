@@ -290,6 +290,16 @@
     .chat-send { background: #1D9E75; color: white; border: none; border-radius: 10px; padding: 9px 14px; font-size: 15px; cursor: pointer; }
     .chat-send:disabled { background: #a0cfbf; cursor: not-allowed; }
  
+    /* ── BMR Calculator ──────────────────────────────────────────────────── */
+    .activity-chip { border: 1px solid #e5e5e5; border-radius: 10px; padding: 9px 12px; font-size: 13px; cursor: pointer; color: #666; background: white; transition: all 0.2s; }
+    body.dark .activity-chip { background: #2a2a2a; border-color: #444; color: #aaa; }
+    .activity-chip.active { background: #E1F5EE; color: #0F6E56; border-color: #5DCAA5; font-weight: 600; }
+    body.dark .activity-chip.active { background: #0F3D2E; color: #5DCAA5; border-color: #1D9E75; }
+    body.dark #inputs-imperial input, body.dark #inputs-metric input, body.dark #calc-age { background: #2a2a2a !important; border-color: #444 !important; color: #eee !important; }
+    body.dark .goal-chip { background: #2a2a2a !important; border-color: #444 !important; color: #aaa !important; }
+    body.dark .goal-chip.active { background: #0F3D2E !important; color: #5DCAA5 !important; border-color: #1D9E75 !important; }
+    body.dark #bmr-results > div:first-child { background: #2a2a2a !important; }
+ 
     /* ── Nutrition Goals ─────────────────────────────────────────────────── */
     .nutrient-chip { border: 1px solid #e5e5e5; border-radius: 99px; padding: 6px 14px; font-size: 13px; cursor: pointer; color: #666; background: white; transition: all 0.2s; display: inline-flex; align-items: center; gap: 5px; }
     body.dark .nutrient-chip { background: #2a2a2a; border-color: #444; color: #aaa; }
@@ -649,6 +659,99 @@
         <div style="font-size:13px;color:#1D9E75;margin-top:6px;font-weight:500;" id="profile-tier"></div>
         <button class="logout-btn" onclick="doLogout()">Log out</button>
         <button class="logout-btn" id="cancel-sub-btn" onclick="cancelSubscription()" style="display:none;margin-top:8px;border-color:#c0392b;color:#c0392b;">Cancel subscription</button>
+      </div>
+      </div>
+      <!-- BMR / Macro Calculator -->
+      <div class="card">
+        <div class="section-label">📏 Calorie & Macro Calculator</div>
+        <div style="font-size:13px;color:#888;margin-bottom:12px;">Enter your stats and we'll calculate your daily calorie and macro targets.</div>
+ 
+        <!-- Unit toggle -->
+        <div style="display:flex;background:#f5f5f0;border-radius:10px;padding:3px;margin-bottom:14px;gap:3px;">
+          <button id="unit-imperial" onclick="setUnit('imperial')" style="flex:1;padding:7px;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;background:#1D9E75;color:white;">🇺🇸 Imperial</button>
+          <button id="unit-metric"   onclick="setUnit('metric')"   style="flex:1;padding:7px;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;background:transparent;color:#888;">🌍 Metric</button>
+        </div>
+ 
+        <!-- Imperial inputs -->
+        <div id="inputs-imperial">
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px;">
+            <div>
+              <div style="font-size:11px;color:#888;margin-bottom:4px;font-weight:600;">FEET</div>
+              <input type="number" id="height-ft" placeholder="5" min="3" max="8" style="width:100%;padding:9px 10px;border:1px solid #e5e5e5;border-radius:10px;font-size:15px;outline:none;background:white;color:#1a1a1a;" />
+            </div>
+            <div>
+              <div style="font-size:11px;color:#888;margin-bottom:4px;font-weight:600;">INCHES</div>
+              <input type="number" id="height-in" placeholder="9" min="0" max="11" style="width:100%;padding:9px 10px;border:1px solid #e5e5e5;border-radius:10px;font-size:15px;outline:none;background:white;color:#1a1a1a;" />
+            </div>
+            <div>
+              <div style="font-size:11px;color:#888;margin-bottom:4px;font-weight:600;">WEIGHT (lbs)</div>
+              <input type="number" id="weight-lbs" placeholder="170" min="50" max="700" style="width:100%;padding:9px 10px;border:1px solid #e5e5e5;border-radius:10px;font-size:15px;outline:none;background:white;color:#1a1a1a;" />
+            </div>
+          </div>
+        </div>
+ 
+        <!-- Metric inputs -->
+        <div id="inputs-metric" style="display:none;">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+            <div>
+              <div style="font-size:11px;color:#888;margin-bottom:4px;font-weight:600;">HEIGHT (cm)</div>
+              <input type="number" id="height-cm" placeholder="175" min="100" max="250" style="width:100%;padding:9px 10px;border:1px solid #e5e5e5;border-radius:10px;font-size:15px;outline:none;background:white;color:#1a1a1a;" />
+            </div>
+            <div>
+              <div style="font-size:11px;color:#888;margin-bottom:4px;font-weight:600;">WEIGHT (kg)</div>
+              <input type="number" id="weight-kg" placeholder="77" min="20" max="300" style="width:100%;padding:9px 10px;border:1px solid #e5e5e5;border-radius:10px;font-size:15px;outline:none;background:white;color:#1a1a1a;" />
+            </div>
+          </div>
+        </div>
+ 
+        <!-- Age + Gender -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">
+          <div>
+            <div style="font-size:11px;color:#888;margin-bottom:4px;font-weight:600;">AGE</div>
+            <input type="number" id="calc-age" placeholder="30" min="15" max="100" style="width:100%;padding:9px 10px;border:1px solid #e5e5e5;border-radius:10px;font-size:15px;outline:none;background:white;color:#1a1a1a;" />
+          </div>
+          <div>
+            <div style="font-size:11px;color:#888;margin-bottom:4px;font-weight:600;">BIOLOGICAL SEX</div>
+            <div style="display:flex;background:#f5f5f0;border-radius:10px;padding:3px;gap:3px;">
+              <button id="sex-male"   onclick="setSex('male')"   style="flex:1;padding:7px;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;background:#1D9E75;color:white;">Male</button>
+              <button id="sex-female" onclick="setSex('female')" style="flex:1;padding:7px;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;background:transparent;color:#888;">Female</button>
+            </div>
+          </div>
+        </div>
+ 
+        <!-- Activity level -->
+        <div style="margin-bottom:12px;">
+          <div style="font-size:11px;color:#888;margin-bottom:6px;font-weight:600;">ACTIVITY LEVEL</div>
+          <div style="display:flex;flex-direction:column;gap:5px;" id="activity-chips">
+            <div class="activity-chip active" data-activity="1.2"    onclick="setActivity(this)">🪑 Sedentary — desk job, little exercise</div>
+            <div class="activity-chip"        data-activity="1.375"  onclick="setActivity(this)">🚶 Lightly active — light exercise 1–3×/week</div>
+            <div class="activity-chip"        data-activity="1.55"   onclick="setActivity(this)">🏃 Moderately active — exercise 3–5×/week</div>
+            <div class="activity-chip"        data-activity="1.725"  onclick="setActivity(this)">💪 Very active — hard exercise 6–7×/week</div>
+            <div class="activity-chip"        data-activity="1.9"    onclick="setActivity(this)">🔥 Extra active — physical job + daily training</div>
+          </div>
+        </div>
+ 
+        <!-- Goal -->
+        <div style="margin-bottom:14px;">
+          <div style="font-size:11px;color:#888;margin-bottom:6px;font-weight:600;">YOUR GOAL</div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;" id="goal-chips">
+            <div class="goal-chip" data-goal="lose"     onclick="setGoal(this)" style="border:1px solid #e5e5e5;border-radius:10px;padding:10px 6px;text-align:center;font-size:12px;cursor:pointer;color:#666;background:white;">⬇️ Lose weight<div style="font-size:10px;color:#bbb;margin-top:2px;">-500 cal</div></div>
+            <div class="goal-chip active" data-goal="maintain"  onclick="setGoal(this)" style="border:1.5px solid #1D9E75;border-radius:10px;padding:10px 6px;text-align:center;font-size:12px;cursor:pointer;color:#0F6E56;background:#E1F5EE;font-weight:600;">⚖️ Maintain<div style="font-size:10px;color:#5DCAA5;margin-top:2px;">TDEE</div></div>
+            <div class="goal-chip" data-goal="gain"     onclick="setGoal(this)" style="border:1px solid #e5e5e5;border-radius:10px;padding:10px 6px;text-align:center;font-size:12px;cursor:pointer;color:#666;background:white;">💪 Gain muscle<div style="font-size:10px;color:#bbb;margin-top:2px;">+300 cal</div></div>
+          </div>
+        </div>
+ 
+        <button onclick="calculateBMR()" style="width:100%;padding:13px;background:#1D9E75;color:white;border:none;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer;margin-bottom:12px;">Calculate my goals</button>
+ 
+        <!-- Results -->
+        <div id="bmr-results" style="display:none;">
+          <div style="background:#f5f5f0;border-radius:12px;padding:14px;margin-bottom:10px;">
+            <div style="font-size:12px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;">Your recommended daily targets</div>
+            <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;" id="bmr-macro-grid"></div>
+          </div>
+          <div style="font-size:12px;color:#888;margin-bottom:10px;text-align:center;">Based on Mifflin-St Jeor formula · estimates only</div>
+          <button onclick="applyBMRGoals()" style="width:100%;padding:13px;background:#1D9E75;color:white;border:none;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer;">✓ Apply to my goals</button>
+        </div>
       </div>
       <!-- Calorie Tracker -->
       <div class="card">
@@ -1484,7 +1587,7 @@
     if (page === 'planner') updatePlannerPage();
     if (page === 'history') loadHistoryPage();
     if (page === 'cookbook') loadCookbookPage();
-    if (page === 'account') { updateAccountPage(); if (currentUser) loadCalorieTracker(); }
+    if (page === 'account') { updateAccountPage(); if (currentUser) { loadCalorieTracker(); restoreCalcState(); } }
   }
  
   function addIngredient() {
@@ -2181,6 +2284,175 @@
       </div>`;
     slotContainer.appendChild(label);
     closeAddRecipeModal();
+  }
+ 
+  // ── BMR / Macro Calculator ────────────────────────────────────────────────
+  let calcUnit = 'imperial';
+  let calcSex = 'male';
+  let calcActivity = 1.2;
+  let calcGoal = 'maintain';
+  let bmrResults = {};
+ 
+  function setUnit(unit) {
+    calcUnit = unit;
+    document.getElementById('inputs-imperial').style.display = unit === 'imperial' ? 'block' : 'none';
+    document.getElementById('inputs-metric').style.display   = unit === 'metric'   ? 'block' : 'none';
+    document.getElementById('unit-imperial').style.background = unit === 'imperial' ? '#1D9E75' : 'transparent';
+    document.getElementById('unit-imperial').style.color     = unit === 'imperial' ? 'white' : '#888';
+    document.getElementById('unit-metric').style.background  = unit === 'metric'   ? '#1D9E75' : 'transparent';
+    document.getElementById('unit-metric').style.color       = unit === 'metric'   ? 'white' : '#888';
+    localStorage.setItem('calcUnit', unit);
+  }
+ 
+  function setSex(sex) {
+    calcSex = sex;
+    document.getElementById('sex-male').style.background   = sex === 'male'   ? '#1D9E75' : 'transparent';
+    document.getElementById('sex-male').style.color        = sex === 'male'   ? 'white'   : '#888';
+    document.getElementById('sex-female').style.background = sex === 'female' ? '#1D9E75' : 'transparent';
+    document.getElementById('sex-female').style.color      = sex === 'female' ? 'white'   : '#888';
+    localStorage.setItem('calcSex', sex);
+  }
+ 
+  function setActivity(chip) {
+    document.querySelectorAll('.activity-chip').forEach(c => c.classList.remove('active'));
+    chip.classList.add('active');
+    calcActivity = parseFloat(chip.getAttribute('data-activity'));
+    localStorage.setItem('calcActivity', calcActivity);
+  }
+ 
+  function setGoal(chip) {
+    document.querySelectorAll('.goal-chip').forEach(c => {
+      c.classList.remove('active');
+      c.style.background = ''; c.style.borderColor = ''; c.style.color = ''; c.style.fontWeight = '';
+    });
+    chip.classList.add('active');
+    chip.style.background = '#E1F5EE'; chip.style.borderColor = '#1D9E75';
+    chip.style.color = '#0F6E56'; chip.style.fontWeight = '600';
+    calcGoal = chip.getAttribute('data-goal');
+    localStorage.setItem('calcGoal', calcGoal);
+  }
+ 
+  function calculateBMR() {
+    let weightKg, heightCm;
+    const age = parseInt(document.getElementById('calc-age').value);
+    if (!age || age < 15 || age > 100) { alert('Please enter a valid age (15–100).'); return; }
+ 
+    if (calcUnit === 'imperial') {
+      const ft  = parseFloat(document.getElementById('height-ft').value);
+      const inc = parseFloat(document.getElementById('height-in').value) || 0;
+      const lbs = parseFloat(document.getElementById('weight-lbs').value);
+      if (!ft || !lbs) { alert('Please enter your height and weight.'); return; }
+      heightCm  = (ft * 12 + inc) * 2.54;
+      weightKg  = lbs * 0.453592;
+      localStorage.setItem('calcFt', ft); localStorage.setItem('calcIn', inc); localStorage.setItem('calcLbs', lbs);
+    } else {
+      heightCm  = parseFloat(document.getElementById('height-cm').value);
+      weightKg  = parseFloat(document.getElementById('weight-kg').value);
+      if (!heightCm || !weightKg) { alert('Please enter your height and weight.'); return; }
+      localStorage.setItem('calcCm', heightCm); localStorage.setItem('calcKg', weightKg);
+    }
+    localStorage.setItem('calcAge', age);
+ 
+    // Mifflin-St Jeor BMR
+    const bmr = calcSex === 'male'
+      ? 10 * weightKg + 6.25 * heightCm - 5 * age + 5
+      : 10 * weightKg + 6.25 * heightCm - 5 * age - 161;
+    const tdee = Math.round(bmr * calcActivity);
+    const goalAdj = calcGoal === 'lose' ? -500 : calcGoal === 'gain' ? 300 : 0;
+    const calories = tdee + goalAdj;
+ 
+    // Macro splits
+    const splits = calcGoal === 'lose'
+      ? { protein: 0.30, carbs: 0.40, fat: 0.30 }
+      : calcGoal === 'gain'
+      ? { protein: 0.30, carbs: 0.45, fat: 0.25 }
+      : { protein: 0.25, carbs: 0.50, fat: 0.25 };
+ 
+    const protein = Math.round((calories * splits.protein) / 4);
+    const carbs   = Math.round((calories * splits.carbs)   / 4);
+    const fat     = Math.round((calories * splits.fat)     / 9);
+    const fiber   = calcSex === 'male' ? 38 : 25;
+    const sugar   = Math.round(calories * 0.10 / 4);
+    const sodium  = 2300;
+ 
+    bmrResults = { calories, protein, carbs, fat, fiber, sugar, sodium };
+ 
+    const grid = document.getElementById('bmr-macro-grid');
+    const items = [
+      { label: '🔥 Calories', value: calories, unit: 'cal', color: '#1a1a1a', bg: '#f5f5f0' },
+      { label: '💪 Protein',  value: protein,  unit: 'g',   color: '#0F6E56', bg: '#E1F5EE' },
+      { label: '🌾 Carbs',    value: carbs,    unit: 'g',   color: '#185FA5', bg: '#E6F1FB' },
+      { label: '🥑 Fat',      value: fat,      unit: 'g',   color: '#854F0B', bg: '#FAEEDA' },
+      { label: '🥦 Fiber',    value: fiber,    unit: 'g',   color: '#5B3FA0', bg: '#EDE9FB' },
+      { label: '🍬 Sugar',    value: sugar,    unit: 'g',   color: '#9C2152', bg: '#FDE8F0' },
+      { label: '🧂 Sodium',   value: sodium,   unit: 'mg',  color: '#2E7D32', bg: '#E8F5E9' },
+    ];
+    grid.innerHTML = items.map(i => `
+      <div style="background:${i.bg};border-radius:10px;padding:10px;text-align:center;">
+        <div style="font-size:11px;color:${i.color};font-weight:600;text-transform:uppercase;letter-spacing:0.4px;">${i.label}</div>
+        <div style="font-size:20px;font-weight:700;color:${i.color};margin-top:3px;">${i.value}<span style="font-size:12px;font-weight:400;">${i.unit}</span></div>
+      </div>`).join('');
+ 
+    document.getElementById('bmr-results').style.display = 'block';
+    document.getElementById('bmr-results').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+ 
+  async function applyBMRGoals() {
+    if (!currentUser) { openAuthModal('signup', 'Sign up free to save your nutrition goals!'); return; }
+    if (!bmrResults.calories) return;
+ 
+    // Save calorie goal
+    await fetch('/calorie-goal', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ goal: bmrResults.calories }) });
+    calorieGoal = bmrResults.calories;
+    document.getElementById('calorie-goal-input').value = bmrResults.calories;
+ 
+    // Auto-select all nutrient chips and set goals
+    const allNutrients = ['protein', 'carbs', 'fat', 'fiber', 'sugar', 'sodium'];
+    trackedNutrients = [...allNutrients];
+    nutrientGoals = {
+      protein: bmrResults.protein,
+      carbs:   bmrResults.carbs,
+      fat:     bmrResults.fat,
+      fiber:   bmrResults.fiber,
+      sugar:   bmrResults.sugar,
+      sodium:  bmrResults.sodium,
+    };
+    document.querySelectorAll('.nutrient-chip').forEach(chip => chip.classList.add('active'));
+    await fetch('/nutrition-goals', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ tracked: trackedNutrients, goals: nutrientGoals }) });
+ 
+    renderNutrientGoalInputs();
+    loadCalorieTracker();
+ 
+    // Confirmation
+    const btn = document.querySelector('button[onclick="applyBMRGoals()"]');
+    btn.textContent = '✓ Goals applied!';
+    btn.style.background = '#888';
+    setTimeout(() => { btn.textContent = '✓ Apply to my goals'; btn.style.background = '#1D9E75'; }, 3000);
+  }
+ 
+  function restoreCalcState() {
+    const unit = localStorage.getItem('calcUnit') || 'imperial';
+    const sex  = localStorage.getItem('calcSex')  || 'male';
+    const act  = localStorage.getItem('calcActivity');
+    const age  = localStorage.getItem('calcAge');
+    setUnit(unit); setSex(sex);
+    if (act) {
+      calcActivity = parseFloat(act);
+      document.querySelectorAll('.activity-chip').forEach(c => {
+        c.classList.toggle('active', parseFloat(c.getAttribute('data-activity')) === calcActivity);
+      });
+    }
+    if (age) document.getElementById('calc-age').value = age;
+    if (unit === 'imperial') {
+      const ft = localStorage.getItem('calcFt'); const inc = localStorage.getItem('calcIn'); const lbs = localStorage.getItem('calcLbs');
+      if (ft)  document.getElementById('height-ft').value  = ft;
+      if (inc) document.getElementById('height-in').value  = inc;
+      if (lbs) document.getElementById('weight-lbs').value = lbs;
+    } else {
+      const cm = localStorage.getItem('calcCm'); const kg = localStorage.getItem('calcKg');
+      if (cm) document.getElementById('height-cm').value = cm;
+      if (kg) document.getElementById('weight-kg').value = kg;
+    }
   }
  
   // ── Nutrition Goals ───────────────────────────────────────────────────────
