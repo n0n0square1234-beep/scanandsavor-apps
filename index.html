@@ -290,6 +290,30 @@
     .chat-send { background: #1D9E75; color: white; border: none; border-radius: 10px; padding: 9px 14px; font-size: 15px; cursor: pointer; }
     .chat-send:disabled { background: #a0cfbf; cursor: not-allowed; }
  
+    /* ── Nutrition Goals ─────────────────────────────────────────────────── */
+    .nutrient-chip { border: 1px solid #e5e5e5; border-radius: 99px; padding: 6px 14px; font-size: 13px; cursor: pointer; color: #666; background: white; transition: all 0.2s; display: inline-flex; align-items: center; gap: 5px; }
+    body.dark .nutrient-chip { background: #2a2a2a; border-color: #444; color: #aaa; }
+    .nutrient-chip.active { font-weight: 600; }
+    .nutrient-chip[data-nutrient="protein"].active  { background: #E1F5EE; color: #0F6E56; border-color: #5DCAA5; }
+    .nutrient-chip[data-nutrient="carbs"].active    { background: #E6F1FB; color: #185FA5; border-color: #7ab3e0; }
+    .nutrient-chip[data-nutrient="fat"].active      { background: #FAEEDA; color: #854F0B; border-color: #f5c07a; }
+    .nutrient-chip[data-nutrient="fiber"].active    { background: #EDE9FB; color: #5B3FA0; border-color: #b39ddb; }
+    .nutrient-chip[data-nutrient="sugar"].active    { background: #FDE8F0; color: #9C2152; border-color: #f48fb1; }
+    .nutrient-chip[data-nutrient="sodium"].active   { background: #E8F5E9; color: #2E7D32; border-color: #81c784; }
+    body.dark .nutrient-chip[data-nutrient="protein"].active { background: #0F3D2E; color: #5DCAA5; border-color: #1D9E75; }
+    body.dark .nutrient-chip[data-nutrient="carbs"].active   { background: #0d2540; color: #7ab3e0; border-color: #185FA5; }
+    body.dark .nutrient-chip[data-nutrient="fat"].active     { background: #2a1f0a; color: #f5c07a; border-color: #854F0B; }
+    body.dark .nutrient-chip[data-nutrient="fiber"].active   { background: #1e1a2e; color: #b39ddb; border-color: #5B3FA0; }
+    body.dark .nutrient-chip[data-nutrient="sugar"].active   { background: #2a0d1a; color: #f48fb1; border-color: #9C2152; }
+    body.dark .nutrient-chip[data-nutrient="sodium"].active  { background: #0a1f0c; color: #81c784; border-color: #2E7D32; }
+    .nutrient-goal-row { display: flex; align-items: center; gap: 8px; padding: 8px 0; border-bottom: 0.5px solid #f0f0f0; }
+    body.dark .nutrient-goal-row { border-bottom-color: #2a2a2a; }
+    .nutrient-goal-label { font-size: 13px; font-weight: 600; min-width: 64px; }
+    .nutrient-progress-bar { background: #f0f0f0; border-radius: 99px; height: 8px; overflow: hidden; flex: 1; }
+    body.dark .nutrient-progress-bar { background: #333; }
+    .nutrient-progress-fill { height: 100%; border-radius: 99px; transition: width 0.4s ease; }
+    .nutrient-progress-text { font-size: 12px; color: #888; white-space: nowrap; min-width: 72px; text-align: right; }
+ 
     /* ── Meal type selector chips ───────────────────────────────────────── */
     .meal-type-chip { border: 1px solid #e5e5e5; border-radius: 99px; padding: 6px 14px; font-size: 13px; cursor: pointer; color: #666; background: white; transition: all 0.2s; display: inline-flex; align-items: center; gap: 4px; }
     body.dark .meal-type-chip { background: #2a2a2a; border-color: #444; color: #aaa; }
@@ -658,6 +682,25 @@
         <div id="calorie-log-list">
           <div style="text-align:center;padding:1rem;color:#888;font-size:14px;">Loading today's log...</div>
         </div>
+        <!-- Nutrition goal progress lives here, injected by renderNutrientProgress -->
+        <div id="nutrient-progress-section" style="display:none;margin-top:14px;">
+          <div style="font-size:12px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Nutrition Goals — Today</div>
+          <div id="nutrient-progress-bars"></div>
+        </div>
+      </div>
+      <!-- Nutrition Goals -->
+      <div class="card">
+        <div class="section-label">🎯 Nutrition Goals</div>
+        <div style="font-size:13px;color:#888;margin-bottom:10px;">Pick which nutrients to track daily progress for.</div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;">
+          <div class="nutrient-chip" data-nutrient="protein" onclick="toggleNutrientGoal(this)">💪 Protein</div>
+          <div class="nutrient-chip" data-nutrient="carbs"   onclick="toggleNutrientGoal(this)">🌾 Carbs</div>
+          <div class="nutrient-chip" data-nutrient="fat"     onclick="toggleNutrientGoal(this)">🥑 Fat</div>
+          <div class="nutrient-chip" data-nutrient="fiber"   onclick="toggleNutrientGoal(this)">🥦 Fiber</div>
+          <div class="nutrient-chip" data-nutrient="sugar"   onclick="toggleNutrientGoal(this)">🍬 Sugar</div>
+          <div class="nutrient-chip" data-nutrient="sodium"  onclick="toggleNutrientGoal(this)">🧂 Sodium</div>
+        </div>
+        <div id="nutrient-goal-inputs" style="margin-bottom:14px;"></div>
       </div>
       <div class="card">
         <div class="section-label">Choose your plan</div>
@@ -834,24 +877,40 @@
     try {
       const res = await fetch('/calorie-log', {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
-        body: JSON.stringify({ name: currentRecipe.title, calories: currentRecipe.calories })
+        body: JSON.stringify({
+          name: currentRecipe.title,
+          calories: currentRecipe.calories,
+          protein: currentRecipe.protein || 0,
+          carbs: currentRecipe.carbs || 0,
+          fat: currentRecipe.fat || 0,
+          fiber: currentRecipe.fiber || 0,
+          sugar: currentRecipe.sugar || 0,
+          sodium: currentRecipe.sodium || 0
+        })
       });
       const data = await res.json();
       todayCalories = data.total; calorieGoal = data.goal;
       btn.textContent = '✓ Logged!'; btn.classList.add('logged');
       updateCalorieMini();
+      renderNutrientProgress(data.nutrient_totals || {});
     } catch (err) { btn.textContent = '+ Log calories'; btn.disabled = false; }
   }
  
   async function loadCalorieTracker() {
     if (!currentUser) return;
     try {
-      const res = await fetch('/calorie-log', { credentials: 'include' });
-      const data = await res.json();
-      todayCalories = data.total || 0;
-      calorieGoal = data.goal || 2000;
+      const [calRes, nutriRes] = await Promise.all([
+        fetch('/calorie-log', { credentials: 'include' }),
+        fetch('/nutrition-goals', { credentials: 'include' })
+      ]);
+      const calData = await calRes.json();
+      const nutriData = await nutriRes.json();
+      todayCalories = calData.total || 0;
+      calorieGoal = calData.goal || 2000;
       document.getElementById('calorie-goal-input').value = calorieGoal;
-      renderCalorieLog(data.entries || [], data.total || 0, data.goal || 2000);
+      renderCalorieLog(calData.entries || [], calData.total || 0, calData.goal || 2000);
+      applyNutritionGoals(nutriData.goals || {}, nutriData.tracked || []);
+      renderNutrientProgress(calData.nutrient_totals || {});
     } catch (err) {}
   }
  
@@ -933,6 +992,7 @@
       todayCalories = data.total; calorieGoal = data.goal;
       renderCalorieLog(data.entries, data.total, data.goal);
       updateCalorieMini();
+      renderNutrientProgress(data.nutrient_totals || {});
     } catch (err) { alert('Could not delete entry.'); }
   }
  
@@ -2121,6 +2181,108 @@
       </div>`;
     slotContainer.appendChild(label);
     closeAddRecipeModal();
+  }
+ 
+  // ── Nutrition Goals ───────────────────────────────────────────────────────
+  const NUTRIENT_CONFIG = {
+    protein: { label: 'Protein', unit: 'g',  color: '#1D9E75', emoji: '💪' },
+    carbs:   { label: 'Carbs',   unit: 'g',  color: '#185FA5', emoji: '🌾' },
+    fat:     { label: 'Fat',     unit: 'g',  color: '#F5A623', emoji: '🥑' },
+    fiber:   { label: 'Fiber',   unit: 'g',  color: '#7E57C2', emoji: '🥦' },
+    sugar:   { label: 'Sugar',   unit: 'g',  color: '#E91E8C', emoji: '🍬' },
+    sodium:  { label: 'Sodium',  unit: 'mg', color: '#43A047', emoji: '🧂' },
+  };
+ 
+  let trackedNutrients = [];
+  let nutrientGoals = {};
+ 
+  function toggleNutrientGoal(chip) {
+    const nutrient = chip.getAttribute('data-nutrient');
+    if (chip.classList.contains('active')) {
+      chip.classList.remove('active');
+      trackedNutrients = trackedNutrients.filter(n => n !== nutrient);
+    } else {
+      chip.classList.add('active');
+      if (!trackedNutrients.includes(nutrient)) trackedNutrients.push(nutrient);
+    }
+    renderNutrientGoalInputs();
+  }
+ 
+  function applyNutritionGoals(goals, tracked) {
+    nutrientGoals = goals;
+    trackedNutrients = tracked;
+    document.querySelectorAll('.nutrient-chip').forEach(chip => {
+      const n = chip.getAttribute('data-nutrient');
+      chip.classList.toggle('active', tracked.includes(n));
+    });
+    renderNutrientGoalInputs();
+  }
+ 
+  function renderNutrientGoalInputs() {
+    const container = document.getElementById('nutrient-goal-inputs');
+    if (!container) return;
+    if (trackedNutrients.length === 0) { container.innerHTML = ''; return; }
+    container.innerHTML = `
+      <div style="font-size:12px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Set daily goals</div>
+      ${trackedNutrients.map(n => {
+        const cfg = NUTRIENT_CONFIG[n];
+        const val = nutrientGoals[n] || '';
+        return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+          <span style="font-size:14px;min-width:20px;">${cfg.emoji}</span>
+          <span style="font-size:13px;font-weight:600;color:${cfg.color};min-width:52px;">${cfg.label}</span>
+          <div style="display:flex;align-items:center;border:1px solid #e5e5e5;border-radius:10px;overflow:hidden;flex:1;">
+            <input type="number" id="goal-input-${n}" value="${val}" placeholder="e.g. ${n === 'sodium' ? 2300 : n === 'fiber' ? 25 : n === 'fat' ? 65 : 150}" min="0" style="flex:1;padding:7px 10px;border:none;outline:none;font-size:14px;background:white;color:#1a1a1a;" onkeydown="if(event.key==='Enter') saveNutritionGoals()" />
+            <span style="padding:7px 10px;background:#f5f5f0;color:#888;font-size:12px;border-left:1px solid #e5e5e5;">${cfg.unit}</span>
+          </div>
+        </div>`;
+      }).join('')}
+      <button onclick="saveNutritionGoals()" style="width:100%;padding:10px;background:#1D9E75;color:white;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;margin-top:4px;">Save goals</button>`;
+  }
+ 
+  async function saveNutritionGoals() {
+    if (!currentUser) return;
+    const goals = {};
+    trackedNutrients.forEach(n => {
+      const input = document.getElementById('goal-input-' + n);
+      if (input && input.value) goals[n] = parseFloat(input.value);
+    });
+    nutrientGoals = goals;
+    try {
+      await fetch('/nutrition-goals', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+        body: JSON.stringify({ tracked: trackedNutrients, goals })
+      });
+      const calRes = await fetch('/calorie-log', { credentials: 'include' });
+      const calData = await calRes.json();
+      renderNutrientProgress(calData.nutrient_totals || {});
+    } catch (err) { alert('Could not save goals. Try again.'); }
+  }
+ 
+  function renderNutrientProgress(totals) {
+    const section = document.getElementById('nutrient-progress-section');
+    const barsEl = document.getElementById('nutrient-progress-bars');
+    if (!section || !barsEl) return;
+    const active = trackedNutrients.filter(n => nutrientGoals[n]);
+    if (active.length === 0) { section.style.display = 'none'; return; }
+    section.style.display = 'block';
+    barsEl.innerHTML = '';
+    active.forEach(n => {
+      const cfg = NUTRIENT_CONFIG[n];
+      const goal = nutrientGoals[n] || 1;
+      const current = parseFloat(totals[n] || 0);
+      const pct = Math.min((current / goal) * 100, 100);
+      const over = current > goal;
+      const row = document.createElement('div');
+      row.className = 'nutrient-goal-row';
+      row.innerHTML = `
+        <span style="font-size:14px;">${cfg.emoji}</span>
+        <span class="nutrient-goal-label" style="color:${cfg.color};">${cfg.label}</span>
+        <div class="nutrient-progress-bar">
+          <div class="nutrient-progress-fill" style="width:${pct}%;background:${over ? '#c0392b' : cfg.color};"></div>
+        </div>
+        <span class="nutrient-progress-text">${current}${cfg.unit === 'mg' ? 'mg' : 'g'} / ${goal}${cfg.unit === 'mg' ? 'mg' : 'g'}</span>`;
+      barsEl.appendChild(row);
+    });
   }
  
   // ── Meal type selector ────────────────────────────────────────────────────
