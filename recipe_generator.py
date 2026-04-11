@@ -1,6 +1,3 @@
-
-Copy
-
 import os
 import base64
 from anthropic import Anthropic
@@ -176,22 +173,54 @@ def generate_meal_plan(ingredients, dietary_restrictions=[], days=7, budget=None
     # Build nutrition targets instruction
     nutrition_text = ""
     if nutrition_targets:
-        targets = []
+        num_meals = len(ai_meals) if ai_meals else 1
+ 
+        # Calculate per-meal targets by dividing daily totals evenly
+        per_meal = {}
         label_map = {
-            'calories': 'calories', 'protein': 'protein (g)', 'carbs': 'carbs (g)',
-            'fat': 'fat (g)', 'fiber': 'fiber (g)', 'sugar': 'sugar (g)', 'sodium': 'sodium (mg)'
+            'calories': ('calories', ''),
+            'protein':  ('protein',  'g'),
+            'carbs':    ('carbs',    'g'),
+            'fat':      ('fat',      'g'),
+            'fiber':    ('fiber',    'g'),
+            'sugar':    ('sugar',    'g'),
+            'sodium':   ('sodium',   'mg'),
         }
-        for key, label in label_map.items():
+        daily_lines = []
+        meal_lines  = []
+        for key, (label, unit) in label_map.items():
             if key in nutrition_targets and nutrition_targets[key]:
-                targets.append(f"{label}: ~{nutrition_targets[key]}")
-        if targets:
-            num_meals = len(ai_meals) if ai_meals else 1
+                daily_val    = float(nutrition_targets[key])
+                per_meal_val = round(daily_val / num_meals, 1)
+                per_meal[key] = per_meal_val
+                daily_lines.append(f"  - Daily {label}: {daily_val}{unit}")
+                meal_lines.append(f"  - Per meal {label}: ~{per_meal_val}{unit}")
+ 
+        if daily_lines:
+            # Determine if protein goal is high (>25% of calories from protein)
+            protein_goal = float(nutrition_targets.get('protein', 0))
+            cal_goal     = float(nutrition_targets.get('calories', 2000))
+            high_protein = protein_goal > 0 and (protein_goal * 4 / cal_goal) > 0.25
+ 
             nutrition_text = (
-                "IMPORTANT — The user has personal nutrition goals. Each day's total meals combined must hit these targets per person:\n"
-                + "\n".join(f"  - {t}" for t in targets)
-                + f"\nSpread these targets across the {num_meals} meal(s) per day. "
-                + "Choose meal options whose combined totals closely match these daily goals. "
-                + "Prioritize hitting the calorie and protein targets above all others."
+                "==== CRITICAL NUTRITION REQUIREMENTS ====\n"
+                "The user has set personal nutrition goals. You MUST build the meal plan around hitting these EXACTLY.\n\n"
+                "Daily targets:\n" + "\n".join(daily_lines) + "\n\n"
+                f"With {num_meals} meal(s) per day, each meal should hit approximately:\n" + "\n".join(meal_lines) + "\n\n"
+                "RULES:\n"
+                "1. Every meal option's macros MUST closely match the per-meal targets above.\n"
+                "2. Choose high-protein foods (chicken breast, eggs, Greek yogurt, tuna, turkey, cottage cheese, lentils, tofu) whenever protein targets are set.\n"
+            )
+            if high_protein:
+                nutrition_text += (
+                    "3. PROTEIN PRIORITY: The user has a HIGH protein goal. Every single meal must feature a substantial protein source. "
+                    f"Each meal must contain at least {int(per_meal.get('protein', 30))}g protein. "
+                    "If needed, add a protein shake, Greek yogurt, eggs, or lean meat to any meal that would otherwise fall short.\n"
+                )
+            nutrition_text += (
+                "4. If the number of meals per day cannot realistically hit the daily targets, ADD an extra high-protein snack or side to make up the difference.\n"
+                "5. The CALORIES shown for each meal option MUST reflect the per-meal calorie target, not generic estimates.\n"
+                "==== END NUTRITION REQUIREMENTS ====\n"
             )
  
     # Build human-readable meal list for the prompt
@@ -232,7 +261,7 @@ def generate_meal_plan(ingredients, dietary_restrictions=[], days=7, budget=None
  
     message = client.messages.create(
         model="claude-haiku-4-5-20251001",
-        max_tokens=3500,
+        max_tokens=4096,
         system=system_prompt,
         messages=[{"role": "user", "content": user_prompt}]
     )

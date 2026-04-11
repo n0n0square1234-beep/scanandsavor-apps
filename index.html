@@ -874,7 +874,10 @@
   <div class="recipe-modal-box">
     <div class="recipe-modal-header">
       <div><div style="font-size:18px;font-weight:600;" id="modal-recipe-title">Loading...</div><div style="font-size:13px;color:#888;margin-top:2px;" id="modal-recipe-meta"></div></div>
-      <button class="recipe-modal-close" onclick="closeRecipeModal()">×</button>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <button id="modal-log-btn" onclick="logPlannerMeal()" style="display:none;background:#F5A623;color:white;border:none;border-radius:8px;padding:7px 12px;font-size:13px;font-weight:600;cursor:pointer;">+ Log</button>
+        <button class="recipe-modal-close" onclick="closeRecipeModal()">×</button>
+      </div>
     </div>
     <div id="modal-recipe-body"><div style="text-align:center;padding:2rem;color:#888;">Fetching recipe...</div></div>
   </div>
@@ -1496,7 +1499,14 @@
     document.getElementById('serving-adjuster').style.display = 'flex';
   }
  
+  let currentPlannerRecipe = null;
+ 
   async function getPlannerRecipe(recipeName) {
+    currentPlannerRecipe = null;
+    document.getElementById('modal-log-btn').style.display = 'none';
+    document.getElementById('modal-log-btn').textContent = '+ Log';
+    document.getElementById('modal-log-btn').style.background = '#F5A623';
+    document.getElementById('modal-log-btn').disabled = false;
     openRecipeModal('Loading...', '', '<div style="text-align:center;padding:2rem;color:#888;">Fetching recipe for ' + recipeName + '...</div>');
     const diets = [...document.querySelectorAll('.diet-chip.active')].map(d => d.textContent);
     const recipeIngredients = ingredients.length > 0 ? ingredients : ['common pantry staples'];
@@ -1506,11 +1516,54 @@
       const data = await response.json();
       if (data.recipe) {
         const r = parseRecipe(data.recipe);
+        currentPlannerRecipe = r;
         document.getElementById('modal-recipe-title').textContent = r.title || recipeName;
         document.getElementById('modal-recipe-meta').textContent = [r.time, planServings + (planServings === 1 ? ' serving' : ' servings')].filter(Boolean).join(' · ');
         document.getElementById('modal-recipe-body').innerHTML = buildRecipeHTML(r);
+        if (currentUser && r.calories) document.getElementById('modal-log-btn').style.display = 'block';
       } else { document.getElementById('modal-recipe-body').innerHTML = '<div style="text-align:center;padding:1rem;color:#c0392b;">Could not load recipe. Try again.</div>'; }
     } catch (err) { document.getElementById('modal-recipe-body').innerHTML = '<div style="text-align:center;padding:1rem;color:#c0392b;">Could not load recipe. Try again.</div>'; }
+  }
+ 
+  async function logPlannerMeal() {
+    if (!currentPlannerRecipe || !currentPlannerRecipe.calories) return;
+    const btn = document.getElementById('modal-log-btn');
+    btn.textContent = 'Logging...'; btn.disabled = true;
+    try {
+      const res = await fetch('/calorie-log', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+        body: JSON.stringify({
+          name: currentPlannerRecipe.title,
+          calories: currentPlannerRecipe.calories,
+          protein: currentPlannerRecipe.protein || 0,
+          carbs:   currentPlannerRecipe.carbs   || 0,
+          fat:     currentPlannerRecipe.fat     || 0,
+          fiber:   currentPlannerRecipe.fiber   || 0,
+          sugar:   currentPlannerRecipe.sugar   || 0,
+          sodium:  currentPlannerRecipe.sodium  || 0,
+        })
+      });
+      const data = await res.json();
+      todayCalories = data.total; calorieGoal = data.goal;
+      btn.textContent = '✓ Logged!'; btn.style.background = '#888';
+      renderNutrientProgress(data.nutrient_totals || {});
+    } catch (err) { btn.textContent = '+ Log'; btn.disabled = false; }
+  }
+ 
+  async function logPlannerOption(name, cal, protein, carbs, fat, btn) {
+    if (!currentUser) { openAuthModal('signup', 'Sign up free to track your nutrition!'); return; }
+    if (!cal || cal <= 0) { alert('No calorie info available for this meal.'); return; }
+    btn.textContent = '...'; btn.disabled = true;
+    try {
+      const res = await fetch('/calorie-log', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+        body: JSON.stringify({ name, calories: cal, protein, carbs, fat, fiber: 0, sugar: 0, sodium: 0 })
+      });
+      const data = await res.json();
+      todayCalories = data.total; calorieGoal = data.goal;
+      btn.textContent = '✓'; btn.style.borderColor = '#888'; btn.style.color = '#888';
+      renderNutrientProgress(data.nutrient_totals || {});
+    } catch (err) { btn.textContent = '+ Log'; btn.disabled = false; }
   }
  
   async function doLogin() {
@@ -2044,7 +2097,10 @@
                   <div style="flex:1;">
                     <div style="font-size:14px;color:#1a1a1a;font-weight:500;">${opt.name}</div>
                     <div style="font-size:12px;color:#888;margin-top:2px;">${opt.cal} cal · ${opt.protein}g protein · ${opt.carbs}g carbs · ${opt.fat}g fat</div>
-                    <button onclick="event.stopPropagation(); getPlannerRecipe('${opt.name.replace(/'/g, "\\'")}', '')" style="margin-top:6px;background:none;border:1px solid #1D9E75;color:#1D9E75;border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;">View recipe</button>
+                    <div style="display:flex;gap:6px;margin-top:6px;">
+                      <button onclick="event.stopPropagation(); getPlannerRecipe('${opt.name.replace(/'/g, "\\'")}', '')" style="background:none;border:1px solid #1D9E75;color:#1D9E75;border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;">View recipe</button>
+                      <button onclick="event.stopPropagation(); logPlannerOption('${opt.name.replace(/'/g, "\\'")}', ${opt.cal || 0}, ${opt.protein || 0}, ${opt.carbs || 0}, ${opt.fat || 0}, this)" style="background:none;border:1px solid #F5A623;color:#F5A623;border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;font-weight:600;">+ Log</button>
+                    </div>
                   </div>
                 </label>`).join('')}
             </div>
