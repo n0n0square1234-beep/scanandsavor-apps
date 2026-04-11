@@ -1501,7 +1501,7 @@
  
   let currentPlannerRecipe = null;
  
-  async function getPlannerRecipe(recipeName) {
+  async function getPlannerRecipe(recipeName, _unused, targetCal, targetProtein, targetCarbs, targetFat) {
     currentPlannerRecipe = null;
     document.getElementById('modal-log-btn').style.display = 'none';
     document.getElementById('modal-log-btn').textContent = '+ Log';
@@ -1510,8 +1510,20 @@
     openRecipeModal('Loading...', '', '<div style="text-align:center;padding:2rem;color:#888;">Fetching recipe for ' + recipeName + '...</div>');
     const diets = [...document.querySelectorAll('.diet-chip.active')].map(d => d.textContent);
     const recipeIngredients = ingredients.length > 0 ? ingredients : ['common pantry staples'];
+ 
+    // Build macro targets from planner card if available
+    const macro_targets = (targetCal && targetCal > 0) ? {
+      calories: targetCal,
+      protein:  targetProtein || null,
+      carbs:    targetCarbs   || null,
+      fat:      targetFat     || null,
+    } : null;
+ 
     try {
-      const response = await fetch('/generate-recipe', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ ingredients: recipeIngredients, dietary_restrictions: diets, meal_type: '', recipe_name: recipeName, cook_time: '', servings: planServings }) });
+      const response = await fetch('/generate-recipe', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+        body: JSON.stringify({ ingredients: recipeIngredients, dietary_restrictions: diets, meal_type: '', recipe_name: recipeName, cook_time: '', servings: planServings, macro_targets })
+      });
       if (!response.ok) { document.getElementById('modal-recipe-body').innerHTML = '<div style="text-align:center;padding:1rem;color:#c0392b;">Server error. Try again.</div>'; return; }
       const data = await response.json();
       if (data.recipe) {
@@ -2110,7 +2122,7 @@
                     <div style="font-size:14px;color:#1a1a1a;font-weight:500;">${opt.name}</div>
                     <div style="font-size:12px;color:#888;margin-top:2px;">${opt.cal} cal · ${opt.protein}g protein · ${opt.carbs}g carbs · ${opt.fat}g fat</div>
                     <div style="display:flex;gap:6px;margin-top:6px;">
-                      <button onclick="event.stopPropagation(); getPlannerRecipe('${opt.name.replace(/'/g, "\\'")}', '')" style="background:none;border:1px solid #1D9E75;color:#1D9E75;border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;">View recipe</button>
+                      <button onclick="event.stopPropagation(); getPlannerRecipe('${opt.name.replace(/'/g, "\\'")}', '', ${opt.cal || 0}, ${opt.protein || 0}, ${opt.carbs || 0}, ${opt.fat || 0})" style="background:none;border:1px solid #1D9E75;color:#1D9E75;border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;">View recipe</button>
                       <button onclick="event.stopPropagation(); logPlannerOption('${opt.name.replace(/'/g, "\\'")}', ${opt.cal || 0}, ${opt.protein || 0}, ${opt.carbs || 0}, ${opt.fat || 0}, this)" style="background:none;border:1px solid #F5A623;color:#F5A623;border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;font-weight:600;">+ Log</button>
                     </div>
                   </div>

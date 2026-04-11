@@ -290,8 +290,9 @@ def generate_recipe_route():
     recipe_name = data.get('recipe_name', '')
     cook_time = data.get('cook_time', '')
     servings = data.get('servings', None)
+    macro_targets = data.get('macro_targets', None)
     try:
-        result = generate_recipe(ingredients, dietary_restrictions, meal_type, recipe_name, cook_time, servings)
+        result = generate_recipe(ingredients, dietary_restrictions, meal_type, recipe_name, cook_time, servings, macro_targets)
         return jsonify({'recipe': result})
     except Exception as e:
         return jsonify({'error': str(e)}), 500

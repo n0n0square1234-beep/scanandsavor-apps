@@ -97,7 +97,7 @@ def generate_recipe_list(ingredients, dietary_restrictions=[], meal_type="", coo
     )
     return message.content[0].text
  
-def generate_recipe(ingredients, dietary_restrictions=[], meal_type="", recipe_name="", cook_time="", servings=None):
+def generate_recipe(ingredients, dietary_restrictions=[], meal_type="", recipe_name="", cook_time="", servings=None, macro_targets=None):
     if meal_type:
         ingredients = filter_by_meal(ingredients, meal_type)
  
@@ -106,6 +106,23 @@ def generate_recipe(ingredients, dietary_restrictions=[], meal_type="", recipe_n
     diet_text = "Dietary requirements: " + diet_list + "." if diet_list else ""
     time_text = "This recipe MUST be completable in " + cook_time + " or less." if cook_time else ""
     servings_text = "This recipe MUST be scaled to make exactly " + str(servings) + " " + ("serving" if servings == 1 else "servings") + ". Scale ALL ingredient quantities accordingly." if servings else ""
+ 
+    # Build macro targets instruction
+    macro_text = ""
+    if macro_targets:
+        parts = []
+        if macro_targets.get('calories'): parts.append(f"CALORIES: {macro_targets['calories']}")
+        if macro_targets.get('protein'):  parts.append(f"PROTEIN: {macro_targets['protein']}g")
+        if macro_targets.get('carbs'):    parts.append(f"CARBS: {macro_targets['carbs']}g")
+        if macro_targets.get('fat'):      parts.append(f"FAT: {macro_targets['fat']}g")
+        if parts:
+            macro_text = (
+                "CRITICAL — This recipe MUST hit these exact macro targets per serving:\n"
+                + "\n".join(f"  - {p}" for p in parts) + "\n"
+                "Choose ingredients and quantities that add up to these numbers. "
+                "The CALORIES, PROTEIN, CARBS, and FAT values you output in the format below "
+                "MUST match these targets (within 5%). Do not output generic estimates.\n"
+            )
  
     meal_examples = {
         "breakfast": "pancakes, omelette, french toast, smoothie bowl, breakfast burrito",
@@ -124,8 +141,8 @@ def generate_recipe(ingredients, dietary_restrictions=[], meal_type="", recipe_n
         user_prompt += "You MUST ONLY use these approved " + meal_type + " ingredients: " + ingredient_list + "\n"
         user_prompt += "Do NOT add any vegetables, meat, or savory ingredients.\n"
         user_prompt += diet_text + "\n" + time_text + "\n"
-        if servings_text:
-            user_prompt += servings_text + "\n"
+        if servings_text: user_prompt += servings_text + "\n"
+        if macro_text:    user_prompt += macro_text + "\n"
     else:
         system_prompt = "You are a professional chef and nutritionist."
         user_prompt = "Create a recipe"
@@ -133,8 +150,8 @@ def generate_recipe(ingredients, dietary_restrictions=[], meal_type="", recipe_n
             user_prompt += " called " + recipe_name
         user_prompt += " using: " + ingredient_list + "\n"
         user_prompt += diet_text + "\n" + time_text + "\n"
-        if servings_text:
-            user_prompt += servings_text + "\n"
+        if servings_text: user_prompt += servings_text + "\n"
+        if macro_text:    user_prompt += macro_text + "\n"
  
     servings_format = str(servings) if servings else "[number]"
     user_prompt += "Format exactly like this:\n"
