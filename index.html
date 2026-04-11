@@ -2069,12 +2069,24 @@
     }
  
     const allMealsToRender = [...activeMeals, ...customMealTypes];
+    // Store all option data keyed by optionId for live macro totals
+    window._plannerOptData = window._plannerOptData || {};
  
     for (let d = 1; d <= Object.keys(days_data).length; d++) {
       const dayData = days_data[d];
       if (!dayData) continue;
       const div = document.createElement('div');
       div.className = 'day-card';
+      div.setAttribute('data-day', d);
+ 
+      // Pre-seed opt data for this day
+      allMealsToRender.forEach(mealType => {
+        const isCustom = !standardMeals.includes(mealType);
+        const opts = isCustom ? [] : (dayData[mealType] || []);
+        const optionId = 'day' + d + '_' + mealType.replace(/\s+/g, '_').toLowerCase();
+        window._plannerOptData[optionId] = opts;
+      });
+ 
       div.innerHTML = `<div class="day-title">${dayNames[d - 1] || 'Day ' + d}</div>` +
         allMealsToRender.map(mealType => {
           const isCustom = !standardMeals.includes(mealType);
@@ -2106,9 +2118,56 @@
             </div>
             <button onclick="openAddRecipeModal(${d}, '${mealType}', '${optionId}')" style="margin-top:8px;width:100%;padding:8px;background:none;border:1.5px dashed #1D9E75;color:#1D9E75;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;">+ Add my recipe</button>
           </div>`;
-        }).join('');
+        }).join('') +
+        `<div id="day-totals-${d}" style="margin-top:10px;padding:10px;background:#f5f5f0;border-radius:10px;font-size:12px;"></div>`;
+ 
       container.appendChild(div);
+      // Render initial totals for this day
+      setTimeout(() => updateDayTotals(d), 0);
     }
+  }
+ 
+  function updateDayTotals(d) {
+    const el = document.getElementById('day-totals-' + d);
+    if (!el) return;
+    const standardMeals = ['breakfast', 'lunch', 'dinner'];
+    const allMeals = [...selectedMealTypes, ...customMealTypes];
+    let totalCal = 0, totalPro = 0, totalCarbs = 0, totalFat = 0;
+    allMeals.forEach(mealType => {
+      if (!standardMeals.includes(mealType)) return;
+      const optionId = 'day' + d + '_' + mealType.replace(/\s+/g, '_').toLowerCase();
+      const checked = document.querySelector(`input[name="${optionId}"]:checked`);
+      if (!checked) return;
+      const idx = parseInt(checked.value);
+      const opts = (window._plannerOptData || {})[optionId] || [];
+      const opt = opts[idx];
+      if (!opt) return;
+      totalCal   += parseFloat(opt.cal)     || 0;
+      totalPro   += parseFloat(opt.protein) || 0;
+      totalCarbs += parseFloat(opt.carbs)   || 0;
+      totalFat   += parseFloat(opt.fat)     || 0;
+    });
+ 
+    // Compare against goals if set
+    const calGoal  = calorieGoal || 0;
+    const proGoal  = nutrientGoals.protein || 0;
+    const carbGoal = nutrientGoals.carbs   || 0;
+    const fatGoal  = nutrientGoals.fat     || 0;
+ 
+    function badge(val, goal, unit) {
+      if (!goal) return `<span style="font-weight:700;">${Math.round(val)}${unit}</span>`;
+      const pct = val / goal * 100;
+      const color = pct < 80 ? '#c0392b' : pct > 115 ? '#e67e22' : '#1D9E75';
+      return `<span style="font-weight:700;color:${color};">${Math.round(val)}${unit}</span><span style="color:#aaa;">/${goal}${unit}</span>`;
+    }
+ 
+    el.innerHTML = `<div style="font-size:11px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:0.4px;margin-bottom:5px;">Day total</div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <span>🔥 ${badge(totalCal, calGoal, ' cal')}</span>
+        <span>💪 ${badge(totalPro, proGoal, 'g')}</span>
+        <span>🌾 ${badge(totalCarbs, carbGoal, 'g')}</span>
+        <span>🥑 ${badge(totalFat, fatGoal, 'g')}</span>
+      </div>`;
   }
  
   function selectMealOption(label) {
@@ -2119,6 +2178,9 @@
       lbl.style.borderColor = '#e5e5e5'; lbl.style.background = 'white';
     });
     label.style.borderColor = '#1D9E75'; label.style.background = '#f9fffe';
+    // Recalculate day totals
+    const dayCard = label.closest('[data-day]');
+    if (dayCard) updateDayTotals(parseInt(dayCard.getAttribute('data-day')));
   }
  
   function buildRecipeHTML(r) {

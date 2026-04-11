@@ -156,28 +156,26 @@ def generate_recipe(ingredients, dietary_restrictions=[], meal_type="", recipe_n
     return message.content[0].text
  
 def generate_meal_plan(ingredients, dietary_restrictions=[], days=7, budget=None, selected_meals=None, servings=2, nutrition_targets=None):
-    # Default to all three meals if none specified
     if selected_meals is None:
         selected_meals = ['breakfast', 'lunch', 'dinner']
  
-    # Separate standard meals (AI generates options) from custom meals (user fills in)
     standard_meals = ['breakfast', 'lunch', 'dinner']
     ai_meals = [m for m in selected_meals if m in standard_meals]
+    num_meals = len(ai_meals) if ai_meals else 1
  
     ingredient_list = ", ".join(ingredients) if ingredients else "common pantry staples"
     diet_list = ", ".join(dietary_restrictions)
     diet_text = "All meals must be: " + diet_list + "." if diet_list else ""
-    budget_text = "The TOTAL estimated grocery cost for the entire meal plan must stay within $" + str(budget) + " based on average US grocery prices." if budget else ""
-    servings_text = "All recipes and ingredient quantities must be scaled for " + str(servings) + " " + ("person" if servings == 1 else "people") + "."
+    budget_text = ("The TOTAL estimated grocery cost must stay within $" + str(budget) +
+                   " based on average US grocery prices.") if budget else ""
+    servings_text = ("Scale all quantities for " + str(servings) +
+                     (" person." if servings == 1 else " people."))
  
-    # Build nutrition targets instruction
-    nutrition_text = ""
+    # ── Per-meal targets ──────────────────────────────────────────────────────
+    per_meal = {}
+    nutrition_header = ""
     if nutrition_targets:
-        num_meals = len(ai_meals) if ai_meals else 1
- 
-        # Calculate per-meal targets by dividing daily totals evenly
-        per_meal = {}
-        label_map = {
+        key_map = {
             'calories': ('calories', ''),
             'protein':  ('protein',  'g'),
             'carbs':    ('carbs',    'g'),
@@ -186,82 +184,95 @@ def generate_meal_plan(ingredients, dietary_restrictions=[], days=7, budget=None
             'sugar':    ('sugar',    'g'),
             'sodium':   ('sodium',   'mg'),
         }
-        daily_lines = []
-        meal_lines  = []
-        for key, (label, unit) in label_map.items():
-            if key in nutrition_targets and nutrition_targets[key]:
-                daily_val    = float(nutrition_targets[key])
-                per_meal_val = round(daily_val / num_meals, 1)
-                per_meal[key] = per_meal_val
-                daily_lines.append(f"  - Daily {label}: {daily_val}{unit}")
-                meal_lines.append(f"  - Per meal {label}: ~{per_meal_val}{unit}")
+        daily_strs   = []
+        per_meal_strs = []
+        for key, (label, unit) in key_map.items():
+            if nutrition_targets.get(key):
+                dv  = float(nutrition_targets[key])
+                pmv = round(dv / num_meals, 1)
+                per_meal[key] = pmv
+                daily_strs.append(f"{label}={dv}{unit}")
+                per_meal_strs.append(f"{label}≈{pmv}{unit}")
  
-        if daily_lines:
-            # Determine if protein goal is high (>25% of calories from protein)
+        if daily_strs:
             protein_goal = float(nutrition_targets.get('protein', 0))
             cal_goal     = float(nutrition_targets.get('calories', 2000))
-            high_protein = protein_goal > 0 and (protein_goal * 4 / cal_goal) > 0.25
+            high_protein = protein_goal > 0 and protein_goal * 4 / max(cal_goal, 1) > 0.25
+            min_protein  = int(per_meal.get('protein', 30))
  
-            nutrition_text = (
-                "==== CRITICAL NUTRITION REQUIREMENTS ====\n"
-                "The user has set personal nutrition goals. You MUST build the meal plan around hitting these EXACTLY.\n\n"
-                "Daily targets:\n" + "\n".join(daily_lines) + "\n\n"
-                f"With {num_meals} meal(s) per day, each meal should hit approximately:\n" + "\n".join(meal_lines) + "\n\n"
-                "RULES:\n"
-                "1. Every meal option's macros MUST closely match the per-meal targets above.\n"
-                "2. Choose high-protein foods (chicken breast, eggs, Greek yogurt, tuna, turkey, cottage cheese, lentils, tofu) whenever protein targets are set.\n"
+            nutrition_header = (
+                "\n============================\n"
+                "MANDATORY NUTRITION TARGETS\n"
+                "============================\n"
+                f"User's DAILY goals: {', '.join(daily_strs)}\n"
+                f"With {num_meals} meal(s)/day, EACH MEAL must hit: {', '.join(per_meal_strs)}\n\n"
+                "YOU MUST follow these rules — no exceptions:\n"
+                f"• CALORIES: every meal option must be within 10% of the per-meal calorie target.\n"
+                f"• PROTEIN: every meal must contain at least {min_protein}g protein per person.\n"
+                "• Use high-protein ingredients: chicken breast, eggs, Greek yogurt, cottage cheese,\n"
+                "  tuna, salmon, turkey, lean beef, lentils, tofu, edamame, protein powder.\n"
             )
             if high_protein:
-                nutrition_text += (
-                    "3. PROTEIN PRIORITY: The user has a HIGH protein goal. Every single meal must feature a substantial protein source. "
-                    f"Each meal must contain at least {int(per_meal.get('protein', 30))}g protein. "
-                    "If needed, add a protein shake, Greek yogurt, eggs, or lean meat to any meal that would otherwise fall short.\n"
+                nutrition_header += (
+                    f"• HIGH-PROTEIN MODE: protein goal is above 25% of calories.\n"
+                    f"  Every single meal MUST have a dedicated protein source providing ≥{min_protein}g.\n"
+                    "  If a meal would fall short, add Greek yogurt, a boiled egg, or cottage cheese as a side.\n"
                 )
-            nutrition_text += (
-                "4. If the number of meals per day cannot realistically hit the daily targets, ADD an extra high-protein snack or side to make up the difference.\n"
-                "5. The CALORIES shown for each meal option MUST reflect the per-meal calorie target, not generic estimates.\n"
-                "==== END NUTRITION REQUIREMENTS ====\n"
+            nutrition_header += (
+                "• The macro numbers you output in the format below MUST REFLECT these targets.\n"
+                "  Do NOT output generic/default macro estimates — calculate them to match the goals.\n"
+                "============================\n"
             )
  
-    # Build human-readable meal list for the prompt
-    meals_str = ", ".join(m.upper() for m in ai_meals) if ai_meals else "LUNCH, DINNER"
- 
-    system_prompt = "You are a professional nutritionist and meal planner. You create balanced, varied weekly meal plans that are practical and delicious. When a budget is given, you select affordable ingredients and meals to stay within that budget based on average US supermarket prices. Be concise with meal names — keep them short."
- 
-    user_prompt = "Create a " + str(days) + " day meal plan.\n"
-    user_prompt += "Available ingredients: " + ingredient_list + "\n"
-    user_prompt += "Cooking for: " + str(servings) + " " + ("person" if servings == 1 else "people") + "\n"
-    user_prompt += servings_text + "\n"
-    user_prompt += diet_text + "\n"
-    user_prompt += budget_text + "\n"
-    if nutrition_text:
-        user_prompt += nutrition_text + "\n"
-    user_prompt += "Only include these meals each day: " + meals_str + "\n"
-    user_prompt += "For each meal slot provide 3 different options. Keep meal names SHORT (max 5 words).\n"
-    user_prompt += "Calories and macros shown should be PER PERSON per serving.\n"
-    user_prompt += "At the very end after all days, add: ESTIMATED_TOTAL: $[number]\n"
-    user_prompt += "Format EXACTLY like this for each day:\n\n"
- 
-    # Build format template based only on selected standard meals
+    # ── Build the per-slot format with target numbers embedded ────────────────
     meal_keys = {
         'breakfast': ('BREAKFAST_1', 'BREAKFAST_2', 'BREAKFAST_3'),
         'lunch':     ('LUNCH_1',     'LUNCH_2',     'LUNCH_3'),
         'dinner':    ('DINNER_1',    'DINNER_2',    'DINNER_3'),
     }
  
+    # Build placeholder that shows the targets right in the format
+    def slot_line(key):
+        if per_meal:
+            cal = int(per_meal.get('calories', 600))
+            pro = int(per_meal.get('protein',  40))
+            crb = int(per_meal.get('carbs',    70))
+            fat = int(per_meal.get('fat',      20))
+            return f"{key}: [name] | CALORIES: {cal} | PROTEIN: {pro}g | CARBS: {crb}g | FAT: {fat}g\n"
+        else:
+            return f"{key}: [name] | CALORIES: [n] | PROTEIN: [n]g | CARBS: [n]g | FAT: [n]g\n"
+ 
+    system_prompt = (
+        "You are a professional sports nutritionist and meal planner. "
+        "Your most important job is to hit the exact calorie and macro targets given to you — "
+        "this is non-negotiable. Choose and design every meal to match the numbers. "
+        "Be concise with meal names (max 5 words)."
+    )
+ 
+    user_prompt  = f"Create a {days}-day meal plan.\n"
+    user_prompt += f"Ingredients available: {ingredient_list}\n"
+    user_prompt += f"Cooking for: {servings} {'person' if servings == 1 else 'people'}. {servings_text}\n"
+    if diet_text:      user_prompt += diet_text + "\n"
+    if budget_text:    user_prompt += budget_text + "\n"
+    if nutrition_header: user_prompt += nutrition_header
+    user_prompt += f"Meals per day: {', '.join(m.upper() for m in ai_meals)}\n"
+    user_prompt += "Provide 3 options for every meal slot.\n"
+    user_prompt += "Macros are PER PERSON per serving.\n"
+    user_prompt += "After all days add: ESTIMATED_TOTAL: $[number]\n\n"
+    user_prompt += "FORMAT — copy exactly, replace bracketed values:\n\n"
+ 
     for i in range(1, days + 1):
-        user_prompt += "DAY " + str(i) + ":\n"
+        user_prompt += f"DAY {i}:\n"
         for meal in ai_meals:
-            keys = meal_keys.get(meal, ())
-            for key in keys:
-                user_prompt += key + ": [name] | CALORIES: [n] | PROTEIN: [n]g | CARBS: [n]g | FAT: [n]g\n"
+            for key in meal_keys.get(meal, ()):
+                user_prompt += slot_line(key)
         user_prompt += "\n"
  
     user_prompt += "ESTIMATED_TOTAL: $[total cost]\n"
  
     message = client.messages.create(
-        model="claude-haiku-4-5-20251001",
-        max_tokens=4096,
+        model="claude-sonnet-4-6",
+        max_tokens=8000,
         system=system_prompt,
         messages=[{"role": "user", "content": user_prompt}]
     )
