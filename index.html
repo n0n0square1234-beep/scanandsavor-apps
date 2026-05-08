@@ -2980,6 +2980,11 @@
 
   // ── Wellness / Mindful Mode ───────────────────────────────────────────────
   function restoreWellnessSettings() {
+    // Set defaults for first-time visitors
+    if (localStorage.getItem('calorieTrackerVisible') === null) localStorage.setItem('calorieTrackerVisible', 'on');
+    if (localStorage.getItem('checkinEnabled') === null) localStorage.setItem('checkinEnabled', 'on');
+    if (localStorage.getItem('mindfulMode') === null) localStorage.setItem('mindfulMode', 'off');
+
     const mm = localStorage.getItem('mindfulMode') === 'on';
     const ct = localStorage.getItem('calorieTrackerVisible') !== 'off';
     const ci = localStorage.getItem('checkinEnabled') !== 'off';
