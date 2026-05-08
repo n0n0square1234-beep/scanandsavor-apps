@@ -302,7 +302,12 @@
     body.mindful-mode .calorie-remaining,
     body.mindful-mode .day-totals-row { display: none !important; }
     body.hide-calorie-tracker #calorie-tracker-card,
-    body.hide-calorie-tracker .log-btn { display: none !important; }
+    body.hide-calorie-tracker .log-btn,
+    body.hide-calorie-tracker .macro-grid,
+    body.hide-calorie-tracker .micro-grid,
+    body.hide-calorie-tracker #calorie-mini-banner,
+    body.hide-calorie-tracker .recipe-option-macros { display: none !important; }
+    body.hide-bmr-calculator #bmr-calculator-card { display: none !important; }
     .mindful-only { display: none; }
     body.mindful-mode .mindful-only { display: block; }
     body.mindful-mode .mindful-only-flex { display: flex !important; }
@@ -747,6 +752,16 @@
             <span class="toggle-slider"></span>
           </label>
         </div>
+        <div class="wellness-toggle-row">
+          <div>
+            <div class="wellness-toggle-label">📏 Calorie & Macro Calculator</div>
+            <div class="wellness-toggle-sub">Show or hide the BMR calculator</div>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" id="bmr-calculator-toggle" checked onchange="setBMRCalculatorVisible(this.checked)" />
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
         <div class="wellness-toggle-row" style="border:none;">
           <div>
             <div class="wellness-toggle-label">💬 Mindful Check-ins</div>
@@ -759,7 +774,7 @@
         </div>
       </div>
       <!-- BMR / Macro Calculator -->
-      <div class="card">
+      <div class="card" id="bmr-calculator-card">
         <div class="section-label">📏 Calorie & Macro Calculator</div>
         <div style="font-size:13px;color:#888;margin-bottom:12px;">Enter your stats and we'll calculate your daily calorie and macro targets.</div>
 
@@ -851,7 +866,7 @@
         </div>
       </div>
       <!-- Calorie Tracker -->
-      <div class="card">
+      <div class="card" id="calorie-tracker-card">
         <div class="section-label">🔥 Daily Calorie Tracker</div>
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
           <div style="font-size:13px;color:#888;font-weight:600;white-space:nowrap;">Daily goal:</div>
@@ -2984,23 +2999,33 @@
     if (localStorage.getItem('calorieTrackerVisible') === null) localStorage.setItem('calorieTrackerVisible', 'on');
     if (localStorage.getItem('checkinEnabled') === null) localStorage.setItem('checkinEnabled', 'on');
     if (localStorage.getItem('mindfulMode') === null) localStorage.setItem('mindfulMode', 'off');
+    if (localStorage.getItem('bmrCalculatorVisible') === null) localStorage.setItem('bmrCalculatorVisible', 'on');
 
     const mm = localStorage.getItem('mindfulMode') === 'on';
     const ct = localStorage.getItem('calorieTrackerVisible') !== 'off';
     const ci = localStorage.getItem('checkinEnabled') !== 'off';
+    const bc = localStorage.getItem('bmrCalculatorVisible') !== 'off';
     mindfulMode = mm;
     document.body.classList.toggle('mindful-mode', mm);
     document.body.classList.toggle('hide-calorie-tracker', !ct);
+    document.body.classList.toggle('hide-bmr-calculator', !bc);
     const mmToggle = document.getElementById('mindful-toggle');
     const ctToggle = document.getElementById('calorie-tracker-toggle');
     const ciToggle = document.getElementById('checkin-toggle');
+    const bcToggle = document.getElementById('bmr-calculator-toggle');
     if (mmToggle) mmToggle.checked = mm;
     if (ctToggle) ctToggle.checked = ct;
     if (ciToggle) ciToggle.checked = ci;
+    if (bcToggle) bcToggle.checked = bc;
     // Restore meal regularity
     const saved = JSON.parse(localStorage.getItem('mealReg_' + getTodayStr()) || '{}');
     mealRegularity = { breakfast: false, lunch: false, dinner: false, ...saved };
     renderMealRegularity();
+  }
+
+  function setBMRCalculatorVisible(on) {
+    document.body.classList.toggle('hide-bmr-calculator', !on);
+    localStorage.setItem('bmrCalculatorVisible', on ? 'on' : 'off');
   }
 
   function getTodayStr() {
