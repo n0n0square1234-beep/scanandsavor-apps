@@ -199,6 +199,32 @@ def set_user_calorie_goal(user_id, goal):
     goals[str(user_id)] = int(goal)
     save_calorie_goals_file(goals)
  
+# ── Mindful check-in helpers ──────────────────────────────────────────────────
+MINDFUL_CHECKINS_FILE = "mindful_checkins.json"
+ 
+def load_mindful_checkins():
+    if not os.path.exists(MINDFUL_CHECKINS_FILE):
+        return {}
+    with open(MINDFUL_CHECKINS_FILE, "r", encoding="utf-8") as f:
+        return json.load(f)
+ 
+def save_mindful_checkin_entry(user_id, feeling, note, meal):
+    data = load_mindful_checkins()
+    key = str(user_id)
+    if key not in data:
+        data[key] = []
+    data[key].append({
+        'feeling': feeling,
+        'note': note,
+        'meal': meal,
+        'date': datetime.utcnow().strftime('%Y-%m-%d'),
+        'time': datetime.utcnow().strftime('%I:%M %p')
+    })
+    # Keep last 100 entries per user
+    data[key] = data[key][-100:]
+    with open(MINDFUL_CHECKINS_FILE, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+ 
 # ── Nutrition goals helpers ───────────────────────────────────────────────────
 NUTRITION_GOALS_FILE = "nutrition_goals.json"
  
@@ -370,6 +396,18 @@ def delete_calorie_entry(index):
     goal = get_user_calorie_goal(current_user.id)
     total = sum(e['calories'] for e in entries)
     return jsonify({'entries': entries, 'total': total, 'goal': goal, 'nutrient_totals': get_nutrient_totals(entries)})
+ 
+# ── Mindful check-in route ────────────────────────────────────────────────────
+@app.route('/mindful-checkin', methods=['POST'])
+def mindful_checkin():
+    if not current_user.is_authenticated:
+        return jsonify({'error': 'login_required'}), 401
+    data = request.json
+    feeling = data.get('feeling', '')
+    note = data.get('note', '')
+    meal = data.get('meal', '')
+    save_mindful_checkin_entry(current_user.id, feeling, note, meal)
+    return jsonify({'success': True})
  
 # ── Nutrition goals routes ────────────────────────────────────────────────────
 @app.route('/nutrition-goals', methods=['GET'])
