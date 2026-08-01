@@ -300,7 +300,9 @@
     body.mindful-mode #nutrient-progress-section,
     body.mindful-mode #nutrient-goal-inputs,
     body.mindful-mode .calorie-remaining,
-    body.mindful-mode .day-totals-row { display: none !important; }
+    body.mindful-mode .day-totals-row,
+    body.mindful-mode .calorie-goal-text,
+    body.mindful-mode .calorie-total-num { display: none !important; }
     body.hide-calorie-tracker #calorie-tracker-card,
     body.hide-calorie-tracker .log-btn,
     body.hide-calorie-tracker .macro-grid,
@@ -938,6 +940,15 @@
         <div id="nutrient-goal-inputs" style="margin-bottom:14px;"></div>
       </div>
 
+      <!-- Mindful Check-in History -->
+      <div class="card" id="checkin-history-card" style="display:none;">
+        <div class="section-label">💬 Check-in History</div>
+        <div style="font-size:13px;color:#888;margin-bottom:12px;">Your recent mindful check-ins after meals.</div>
+        <div id="checkin-history-list">
+          <div style="text-align:center;padding:1rem;color:#888;font-size:14px;">Loading...</div>
+        </div>
+      </div>
+
       <!-- Safe Resources (always visible) -->
       <div class="card" id="safe-resources-card">
         <div class="section-label">💚 Support Resources</div>
@@ -1238,6 +1249,53 @@
       renderCalorieLog(calData.entries || [], calData.total || 0, calData.goal || 2000);
       applyNutritionGoals(nutriData.goals || {}, nutriData.tracked || []);
       renderNutrientProgress(calData.nutrient_totals || {});
+    } catch (err) {}
+    loadCheckinHistory();
+  }
+
+  async function loadCheckinHistory() {
+    if (!currentUser) return;
+    try {
+      const res = await fetch('/mindful-checkins', { credentials: 'include' });
+      const data = await res.json();
+      const card = document.getElementById('checkin-history-card');
+      const list = document.getElementById('checkin-history-list');
+      if (!data.checkins || data.checkins.length === 0) {
+        card.style.display = 'none';
+        return;
+      }
+      card.style.display = 'block';
+      const feelingConfig = {
+        great:     { emoji: '😊', label: 'Feeling great!',  color: '#0F6E56', bg: '#E1F5EE' },
+        okay:      { emoji: '😐', label: 'Just okay',       color: '#854F0B', bg: '#FAEEDA' },
+        proud:     { emoji: '💪', label: 'Really proud!',   color: '#185FA5', bg: '#E6F1FB' },
+        difficult: { emoji: '😟', label: 'A bit difficult', color: '#9C2152', bg: '#FDE8F0' },
+      };
+      list.innerHTML = '';
+      data.checkins.slice(0, 10).forEach(entry => {
+        const cfg = feelingConfig[entry.feeling] || { emoji: '💬', label: entry.feeling, color: '#888', bg: '#f5f5f0' };
+        const div = document.createElement('div');
+        div.style.cssText = 'padding:10px 0;border-bottom:0.5px solid #f0f0f0;';
+        div.innerHTML = `
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span style="font-size:22px;">${cfg.emoji}</span>
+            <div style="flex:1;">
+              <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+                <span style="background:${cfg.bg};color:${cfg.color};border-radius:99px;padding:2px 10px;font-size:12px;font-weight:600;">${cfg.label}</span>
+                ${entry.meal ? `<span style="font-size:12px;color:#888;">after ${entry.meal}</span>` : ''}
+              </div>
+              ${entry.note ? `<div style="font-size:13px;color:#555;margin-top:4px;font-style:italic;">"${entry.note}"</div>` : ''}
+              <div style="font-size:11px;color:#bbb;margin-top:3px;">${entry.date} · ${entry.time}</div>
+            </div>
+          </div>`;
+        list.appendChild(div);
+      });
+      if (data.checkins.length > 10) {
+        const more = document.createElement('div');
+        more.style.cssText = 'text-align:center;font-size:12px;color:#888;padding-top:8px;';
+        more.textContent = `+ ${data.checkins.length - 10} more check-ins`;
+        list.appendChild(more);
+      }
     } catch (err) {}
   }
 

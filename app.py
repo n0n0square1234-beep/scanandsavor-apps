@@ -409,6 +409,15 @@ def mindful_checkin():
     save_mindful_checkin_entry(current_user.id, feeling, note, meal)
     return jsonify({'success': True})
  
+@app.route('/mindful-checkins', methods=['GET'])
+def get_mindful_checkins():
+    if not current_user.is_authenticated:
+        return jsonify({'error': 'login_required'}), 401
+    data = load_mindful_checkins()
+    checkins = data.get(str(current_user.id), [])
+    # Return most recent first
+    return jsonify({'checkins': list(reversed(checkins))})
+ 
 # ── Nutrition goals routes ────────────────────────────────────────────────────
 @app.route('/nutrition-goals', methods=['GET'])
 def get_nutrition_goals():
